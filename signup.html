@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account | Emphile Cleaning Solutions Ltd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>CLEANING SOLUTIONS</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="login.html">Log in</a></li>
+  </ul>
+</nav>
+<main>
+  <div class="auth-card">
+    <h1 class="auth-title">Create your account</h1>
+    <p class="auth-sub">Sign up to view your bookings and invoices.</p>
+    <div class="alert alert-error" id="errorAlert"></div>
+    <div class="alert alert-success" id="successAlert"></div>
+    <form id="signupForm">
+      <div class="form-group">
+        <label class="form-label">FULL NAME</label>
+        <input type="text" class="form-input" id="fullName" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">PHONE NUMBER</label>
+        <input type="tel" class="form-input" id="phone" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">EMAIL ADDRESS</label>
+        <input type="email" class="form-input" id="email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">PASSWORD</label>
+        <input type="password" class="form-input" id="password" minlength="6" required>
+      </div>
+      <button type="submit" class="form-submit" id="submitBtn">Create account</button>
+    </form>
+    <p class="auth-switch">Already have an account? <a href="login.html">Log in</a></p>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+  const form = document.getElementById('signupForm');
+  const errorAlert = document.getElementById('errorAlert');
+  const successAlert = document.getElementById('successAlert');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorAlert.classList.remove('show');
+    successAlert.classList.remove('show');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account…';
+
+    const full_name = document.getElementById('fullName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email, password,
+      options: { data: { full_name, phone } }
+    });
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Create account';
+
+    if (error) {
+      errorAlert.textContent = error.message;
+      errorAlert.classList.add('show');
+      return;
+    }
+
+    if (data.session) {
+      window.location.href = 'portal.html';
+    } else {
+      successAlert.textContent = 'Account created. Check your email to confirm, then log in.';
+      successAlert.classList.add('show');
+      form.reset();
+    }
+  });
+</script>
+</body>
+</html>

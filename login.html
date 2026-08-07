@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Login | Emphile Cleaning Solutions Ltd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>CLEANING SOLUTIONS</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="signup.html">Sign up</a></li>
+  </ul>
+</nav>
+<main>
+  <div class="auth-card">
+    <h1 class="auth-title">Client login</h1>
+    <p class="auth-sub">Log in to view your bookings and invoices.</p>
+    <div class="alert alert-error" id="errorAlert"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">EMAIL ADDRESS</label>
+        <input type="email" class="form-input" id="email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">PASSWORD</label>
+        <input type="password" class="form-input" id="password" required>
+      </div>
+      <button type="submit" class="form-submit" id="submitBtn">Log in</button>
+    </form>
+    <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></p>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+  const form = document.getElementById('loginForm');
+  const errorAlert = document.getElementById('errorAlert');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorAlert.classList.remove('show');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in…';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Log in';
+
+    if (error) {
+      errorAlert.textContent = error.message;
+      errorAlert.classList.add('show');
+      return;
+    }
+    window.location.href = 'portal.html';
+  });
+
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) window.location.href = 'portal.html';
+  })();
+</script>
+</body>
+</html>

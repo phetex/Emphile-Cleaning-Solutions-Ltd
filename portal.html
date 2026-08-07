@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account | Emphile Cleaning Solutions Ltd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>CLEANING SOLUTIONS</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+  </ul>
+</nav>
+<div class="portal-wrap">
+  <div class="portal-header">
+    <div>
+      <h1 id="welcomeTitle">Welcome</h1>
+      <p id="welcomeSub">Loading your account…</p>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Log out</button>
+  </div>
+  <div id="content">
+    <div class="loading-state">Loading your invoices…</div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+  const welcomeTitle = document.getElementById('welcomeTitle');
+  const welcomeSub = document.getElementById('welcomeSub');
+  const content = document.getElementById('content');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  function fmtNaira(n) {
+    return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  logoutBtn.addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'login.html';
+  });
+
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+    const user = session.user;
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('full_name, phone')
+      .eq('id', user.id)
+      .single();
+
+    const name = profile && profile.full_name ? profile.full_name : user.email;
+    welcomeTitle.textContent = 'Welcome, ' + name;
+    welcomeSub.textContent = user.email;
+
+    const { data: invoices, error } = await supabaseClient
+      .from('invoices')
+      .select('service_type, job_date, amount, status, notes')
+      .eq('customer_id', user.id)
+      .order('job_date', { ascending: false });
+
+    if (error) {
+      content.innerHTML = '<div class="empty-state">Couldn\'t load invoices right now. Please try again shortly.</div>';
+      return;
+    }
+
+    if (!invoices || invoices.length === 0) {
+      content.innerHTML = '<div class="empty-state">No invoices yet. Once you book a service, it will appear here.</div>';
+      return;
+    }
+
+    const rows = invoices.map((inv) => `
+      <tr>
+        <td>${inv.service_type}</td>
+        <td>${fmtDate(inv.job_date)}</td>
+        <td>${fmtNaira(inv.amount)}</td>
+        <td><span class="status-pill status-${inv.status}">${inv.status}</span></td>
+      </tr>
+    `).join('');
+
+    content.innerHTML = `
+      <table class="invoice-table">
+        <thead>
+          <tr><th>Service</th><th>Job date</th><th>Amount</th><th>Status</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  })();
+</script>
+</body>
+</html>
