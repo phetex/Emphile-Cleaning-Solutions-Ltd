@@ -1,0 +1,629 @@
+<!--
+  EMPHILE CLEANING SOLUTIONS LTD — WEBSITE
+  ------------------------------------------------------------
+  PLACEHOLDERS TO REPLACE BEFORE GOING LIVE (search for "[" ):
+   - RC / company registration number
+   - Registered office address
+   - Operations office address
+   - Phone number
+   - Email address
+   - Website domain
+   - Social media handles
+   - Executive / management names
+  All placeholders are also highlighted with a dashed underline on the page itself.
+  ------------------------------------------------------------
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emphile Cleaning Solutions Ltd | Sustainable Cleaning &amp; Facility Care — Nigeria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-dk: #0B4630;
+    --green: #0E7C4C;
+    --green-mid: #12996A;
+    --mint: #E7F5EC;
+    --mint-2: #DDF3E4;
+    --ink: #10241B;
+    --muted: #55665D;
+    --faint: #8FA097;
+    --border: rgba(16,36,27,0.10);
+    --border-bright: rgba(16,36,27,0.18);
+    --white: #ffffff;
+    --radius: 10px;
+    --ph-bg: #FFF6E0;
+    --ph-border: #D9A441;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--white);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .brand-font { font-family: 'Fraunces', serif; }
+
+  a { color: inherit; }
+
+  /* placeholder styling */
+  .ph {
+    background: var(--ph-bg);
+    border-bottom: 1.5px dashed var(--ph-border);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #6b4c00;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 48px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+  .nav-logo-mark {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px;
+    flex-shrink: 0;
+  }
+  .nav-logo-text { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; letter-spacing: -0.01em; }
+  .nav-logo-text small { display: block; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.14em; color: var(--muted); }
+  .nav-links { display: flex; align-items: center; gap: 30px; list-style: none; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--green-dk); }
+  .nav-cta {
+    background: var(--green-dk); color: #fff !important;
+    padding: 10px 22px; border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .nav-cta:hover { background: var(--green); }
+
+  /* Hero */
+  .hero {
+    min-height: 92vh;
+    display: flex; align-items: center;
+    padding: 140px 48px 80px;
+    position: relative; overflow: hidden;
+    background: radial-gradient(ellipse 70% 60% at 80% 20%, var(--mint) 0%, transparent 60%), var(--white);
+  }
+  .hero-leaf {
+    position: absolute; right: -80px; top: 50%; transform: translateY(-50%);
+    width: 620px; height: 620px; opacity: 0.55;
+  }
+  .hero-content { position: relative; z-index: 2; max-width: 680px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--mint); color: var(--green-dk);
+    padding: 8px 16px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: 0.03em;
+    margin-bottom: 28px;
+  }
+  .hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .hero-headline {
+    font-size: clamp(40px, 5.4vw, 66px);
+    line-height: 1.06; font-weight: 600; letter-spacing: -0.01em;
+    margin-bottom: 24px; color: var(--green-dk);
+  }
+  .hero-headline .accent { color: var(--green); font-style: italic; }
+  .hero-sub {
+    font-size: 17px; color: var(--muted); max-width: 520px;
+    margin-bottom: 36px; font-weight: 400; line-height: 1.7;
+  }
+  .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--green-dk); color: #fff;
+    padding: 15px 28px; border-radius: 999px;
+    font-weight: 600; font-size: 15px; text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { background: var(--green); transform: translateY(-1px); }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--green-dk); text-decoration: none;
+    font-size: 15px; font-weight: 600; padding: 15px 6px;
+    border-bottom: 2px solid var(--green-dk);
+  }
+  .btn-ghost:hover { color: var(--green); border-color: var(--green); }
+
+  /* feature pills strip */
+  .feature-strip {
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 30px 48px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+  }
+  .feature-pill { display: flex; align-items: center; gap: 12px; }
+  .feature-pill .icon {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--mint); color: var(--green-dk);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .feature-pill .label { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .feature-pill .sub { font-size: 12.5px; color: var(--muted); }
+
+  /* Sections */
+  .section { padding: 100px 48px; }
+  .section-label {
+    font-size: 12.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--green); margin-bottom: 14px;
+  }
+  .section-title { font-size: clamp(30px, 4vw, 44px); font-weight: 600; line-height: 1.12; margin-bottom: 16px; color: var(--green-dk); }
+  .section-sub { color: var(--muted); max-width: 560px; font-size: 15.5px; margin-bottom: 56px; }
+  .section.alt { background: var(--mint-2); }
+
+  /* services */
+  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .service-card {
+    background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 32px 28px; transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
+  }
+  .service-card:hover { box-shadow: 0 16px 40px rgba(11,70,48,0.10); transform: translateY(-3px); border-color: var(--border-bright); }
+  .service-icon {
+    width: 50px; height: 50px; border-radius: 12px;
+    background: var(--mint); display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 20px;
+  }
+  .service-name { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; margin-bottom: 8px; color: var(--ink); }
+  .service-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+  /* about */
+  .about-section {
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 70px; align-items: start;
+  }
+  .about-body { font-size: 15.5px; color: var(--muted); line-height: 1.85; margin-bottom: 18px; }
+  .values-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 28px; }
+  .values-list li { display: flex; gap: 12px; font-size: 14.5px; color: var(--ink); align-items: flex-start; }
+  .values-list li .check { color: var(--green); font-weight: 700; flex-shrink: 0; }
+  .about-panel {
+    background: var(--green-dk); color: #fff; border-radius: 16px;
+    padding: 40px; position: sticky; top: 100px;
+  }
+  .about-panel .panel-label { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #9fe0bc; margin-bottom: 24px; font-weight: 700; }
+  .about-panel .row { padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.14); }
+  .about-panel .row:last-child { border-bottom: none; }
+  .about-panel .row-label { font-size: 11.5px; color: #a9d9bd; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .about-panel .row-val { font-size: 14.5px; }
+  .about-panel .ph { background: rgba(255,255,255,0.14); border-bottom: 1.5px dashed #F5C542; color: #FCE9B8; }
+
+  /* why us */
+  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .why-item { background: #fff; padding: 34px 30px; }
+  .why-item .num { font-family: 'Fraunces', serif; font-size: 30px; color: var(--mint-2); font-weight: 600; margin-bottom: 10px; -webkit-text-stroke: 1px var(--green); color: transparent; }
+  .why-item .t { font-size: 15.5px; font-weight: 600; margin-bottom: 8px; color: var(--ink); }
+  .why-item .d { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+
+  /* who we serve */
+  .serve-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+  .serve-card { text-align: center; padding: 28px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+  .serve-card .icon { font-size: 26px; margin-bottom: 12px; }
+  .serve-card .t { font-size: 13.5px; font-weight: 600; color: var(--ink); line-height: 1.4; }
+
+  /* QA / sustainability two column */
+  .split-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .split-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 36px; }
+  .split-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 18px; color: var(--green-dk); }
+  .split-card ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .split-card li { display: flex; gap: 10px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .split-card li .check { color: var(--green); flex-shrink: 0; }
+
+  /* Contact */
+  .contact-section { display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; }
+  .contact-info-list { display: flex; flex-direction: column; }
+  .contact-item { padding: 24px 0; border-bottom: 1px solid var(--border); display: flex; gap: 18px; align-items: flex-start; }
+  .contact-item:first-child { padding-top: 0; }
+  .contact-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--mint); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .contact-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 4px; }
+  .contact-val { font-size: 15px; color: var(--ink); }
+
+  .form-panel { background: var(--mint-2); border-radius: 16px; padding: 44px; }
+  .form-title { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; margin-bottom: 8px; color: var(--green-dk); }
+  .form-sub { font-size: 13.5px; color: var(--muted); margin-bottom: 30px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 7px; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; background: #fff; border: 1px solid var(--border-bright);
+    color: var(--ink); padding: 12px 14px; font-family: 'Inter', sans-serif;
+    font-size: 14px; border-radius: 8px; outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--green); }
+  .form-textarea { resize: vertical; min-height: 90px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-submit {
+    width: 100%; background: var(--green-dk); color: #fff; border: none;
+    padding: 15px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif;
+    cursor: pointer; border-radius: 999px; transition: background 0.2s; margin-top: 6px;
+  }
+  .form-submit:hover { background: var(--green); }
+  .form-note { font-size: 12px; color: var(--faint); margin-top: 14px; }
+
+  /* CTA band */
+  .cta-band {
+    padding: 70px 48px; background: var(--green-dk); color: #fff;
+    display: flex; align-items: center; justify-content: space-between; gap: 40px;
+  }
+  .cta-text { font-family: 'Fraunces', serif; font-size: clamp(26px, 3.6vw, 40px); font-weight: 600; line-height: 1.15; }
+  .btn-light { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: var(--green-dk); padding: 15px 30px; border-radius: 999px; font-weight: 700; font-size: 14.5px; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: opacity 0.2s; }
+  .btn-light:hover { opacity: 0.9; }
+
+  /* Footer */
+  footer { background: var(--ink); color: rgba(255,255,255,0.7); padding: 60px 48px 30px; }
+  .footer-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 44px; }
+  .footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .footer-brand-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; color: #fff; }
+  .footer-desc { font-size: 13px; line-height: 1.7; max-width: 260px; }
+  .footer-col-title { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #9fe0bc; margin-bottom: 16px; font-weight: 700; }
+  .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-links a { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 13.5px; transition: color 0.2s; }
+  .footer-links a:hover { color: #fff; }
+  .footer-links .ph { background: rgba(255,255,255,0.1); border-bottom: 1.5px dashed #F5C542; color: #FCE9B8; }
+  .footer-bottom { border-top: 1px solid rgba(255,255,255,0.12); padding-top: 22px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; }
+
+  /* reveal */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.08s; }
+  .reveal-delay-2 { transition-delay: 0.16s; }
+  .reveal-delay-3 { transition-delay: 0.24s; }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .services-grid { grid-template-columns: repeat(2, 1fr); }
+    .about-section { grid-template-columns: 1fr; }
+    .about-panel { position: static; }
+    .why-grid { grid-template-columns: repeat(2, 1fr); }
+    .serve-grid { grid-template-columns: repeat(3, 1fr); }
+    .split-cols { grid-template-columns: 1fr; }
+    .contact-section { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    .feature-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    .hero { padding: 110px 20px 60px; }
+    .hero-leaf { display: none; }
+    .section { padding: 64px 20px; }
+    .services-grid, .why-grid, .serve-grid { grid-template-columns: 1fr; }
+    .feature-strip { grid-template-columns: 1fr; padding: 24px 20px; }
+    .cta-band { flex-direction: column; text-align: center; padding: 50px 20px; }
+    .footer-top { grid-template-columns: 1fr; gap: 30px; }
+    .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav id="mainNav">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>CLEANING SOLUTIONS</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#why">Why Us</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#quote" class="nav-cta">Request a Quote</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge"><span class="dot"></span> SERVING <span class="ph">[Your City/State]</span>, NIGERIA</div>
+    <h1 class="hero-headline">Spotless spaces,<br><span class="accent">sustainably</span> delivered.</h1>
+    <p class="hero-sub">Emphile Cleaning Solutions Ltd provides professional, eco-conscious cleaning and facility support for corporate, commercial, and residential clients — combining trained personnel, structured processes, and environmentally responsible practices.</p>
+    <div class="hero-actions">
+      <a href="#quote" class="btn-primary">Request a Quote →</a>
+      <a href="#services" class="btn-ghost">Our Services ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- Feature strip -->
+<div class="feature-strip">
+  <div class="feature-pill">
+    <div class="icon">🌿</div>
+    <div><div class="label">Eco-Friendly Products</div><div class="sub">Low-toxicity, sustainable materials</div></div>
+  </div>
+  <div class="feature-pill">
+    <div class="icon">🧑‍🤝‍🧑</div>
+    <div><div class="label">Trained &amp; Vetted Staff</div><div class="sub">Uniformed, professional teams</div></div>
+  </div>
+  <div class="feature-pill">
+    <div class="icon">📋</div>
+    <div><div class="label">Structured SOPs</div><div class="sub">Checklists &amp; quality inspections</div></div>
+  </div>
+  <div class="feature-pill">
+    <div class="icon">🛡️</div>
+    <div><div class="label">Insured &amp; Compliant</div><div class="sub">Fully licensed operations</div></div>
+  </div>
+</div>
+
+<!-- Services -->
+<section class="section" id="services">
+  <p class="section-label reveal">What We Do</p>
+  <h2 class="section-title reveal">Our Services</h2>
+  <p class="section-sub reveal">A full range of cleaning and facility support solutions for corporate, residential, and specialized environments.</p>
+  <div class="services-grid">
+    <div class="service-card reveal">
+      <div class="service-icon">🏢</div>
+      <div class="service-name">Commercial &amp; Office Cleaning</div>
+      <p class="service-desc">Daily, weekly, and monthly schedules covering general office sanitation, restroom hygiene, and waste coordination.</p>
+    </div>
+    <div class="service-card reveal reveal-delay-1">
+      <div class="service-icon">🍃</div>
+      <div class="service-name">Green Cleaning Solutions</div>
+      <p class="service-desc">Eco-friendly, low-toxicity products and sustainable methods that protect health and reduce environmental impact.</p>
+    </div>
+    <div class="service-card reveal reveal-delay-2">
+      <div class="service-icon">🏠</div>
+      <div class="service-name">Residential Cleaning</div>
+      <p class="service-desc">Routine housekeeping, deep cleaning, and move-in/move-out cleaning for homes and private residences.</p>
+    </div>
+    <div class="service-card reveal reveal-delay-1">
+      <div class="service-icon">🛋️</div>
+      <div class="service-name">Carpet &amp; Upholstery Cleaning</div>
+      <p class="service-desc">Hot water extraction, stain treatment, odor control, and fabric sanitization for carpets and furniture.</p>
+    </div>
+    <div class="service-card reveal reveal-delay-2">
+      <div class="service-icon">🧽</div>
+      <div class="service-name">Floor Care Services</div>
+      <p class="service-desc">Scrubbing, polishing, sealing, and surface protection for tile, marble, terrazzo, and vinyl floors.</p>
+    </div>
+    <div class="service-card reveal reveal-delay-3">
+      <div class="service-icon">🪟</div>
+      <div class="service-name">Window Cleaning</div>
+      <p class="service-desc">Internal and external glass cleaning, including high-reach and façade cleaning where applicable.</p>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-icon">🏗️</div>
+      <div class="service-name">Post-Construction Cleaning</div>
+      <p class="service-desc">Debris and dust removal, paint and residue cleaning, and final handover preparation.</p>
+    </div>
+    <div class="service-card reveal reveal-delay-1">
+      <div class="service-icon">♻️</div>
+      <div class="service-name">Waste Management Support</div>
+      <p class="service-desc">On-site waste segregation guidance, ethical disposal coordination, and recycling support.</p>
+    </div>
+    <div class="service-card reveal reveal-delay-2">
+      <div class="service-icon">🐜</div>
+      <div class="service-name">Pest Control &amp; Specialized Cleaning</div>
+      <p class="service-desc">Environmentally safe pest management, plus tailored cleaning for schools, hospitality, and healthcare settings.</p>
+    </div>
+  </div>
+</section>
+
+<!-- About -->
+<section class="section alt" id="about">
+  <div class="about-section">
+    <div>
+      <p class="section-label reveal">About Emphile</p>
+      <h2 class="section-title reveal">Built on care, discipline, and sustainability.</h2>
+      <p class="about-body reveal">Emphile Cleaning Solutions Ltd is a professional cleaning and facility support company delivering high-quality, environmentally responsible cleaning services to corporate, commercial, and residential clients. We combine trained manpower, structured processes, and eco-friendly practices to provide reliable, compliant, and scalable cleaning solutions.</p>
+      <p class="about-body reveal">Our vision is to become a leading name in sustainable cleaning and facility support — recognized for quality execution, innovation, and environmental stewardship. Our mission is to deliver eco-friendly cleaning solutions that promote healthier work and living environments through reliability, professionalism, and exceptional service.</p>
+      <ul class="values-list reveal">
+        <li><span class="check">✓</span> <strong>Customer Focus</strong> — solutions built around client needs and outcomes</li>
+        <li><span class="check">✓</span> <strong>Integrity &amp; Compliance</strong> — ethical operations and regulatory adherence</li>
+        <li><span class="check">✓</span> <strong>Professionalism</strong> — skilled personnel and service excellence</li>
+        <li><span class="check">✓</span> <strong>Safety &amp; Health</strong> — protecting people, property, and the environment</li>
+        <li><span class="check">✓</span> <strong>Sustainability</strong> — responsible use of materials and waste management</li>
+        <li><span class="check">✓</span> <strong>Continuous Improvement</strong> — ongoing process and skill enhancement</li>
+      </ul>
+    </div>
+    <div class="about-panel reveal">
+      <div class="panel-label">Company Details</div>
+      <div class="row"><div class="row-label">Business Name</div><div class="row-val">Emphile Cleaning Solutions Ltd</div></div>
+      <div class="row"><div class="row-label">RC Number</div><div class="row-val"><span class="ph">[RC Number]</span></div></div>
+      <div class="row"><div class="row-label">Registered Office</div><div class="row-val">2, Mustapha Close, Cement, Dopemu, Lagos</div></div>
+      <div class="row"><div class="row-label">Operations Office</div><div class="row-val"><span class="ph">[Operations Office Address]</span></div></div>
+      <div class="row"><div class="row-label">Industry Focus</div><div class="row-val">Cleaning Services, Facility Maintenance, Green &amp; Sustainable Solutions</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Why Us -->
+<section class="section" id="why">
+  <p class="section-label reveal">Why Choose Us</p>
+  <h2 class="section-title reveal">Our Competitive Advantage</h2>
+  <div class="why-grid">
+    <div class="why-item reveal"><div class="num">01</div><div class="t">Licensed &amp; Compliant</div><div class="d">Fully registered and regulatory-compliant operations across every engagement.</div></div>
+    <div class="why-item reveal reveal-delay-1"><div class="num">02</div><div class="t">Trained, Vetted Staff</div><div class="d">Professionally trained and uniformed personnel for every job.</div></div>
+    <div class="why-item reveal reveal-delay-2"><div class="num">03</div><div class="t">Flexible Service Models</div><div class="d">Hourly, retainer-based, and project-based arrangements to suit your needs.</div></div>
+    <div class="why-item reveal"><div class="num">04</div><div class="t">Eco-Friendly Focus</div><div class="d">A strong emphasis on sustainable, low-impact cleaning solutions.</div></div>
+    <div class="why-item reveal reveal-delay-1"><div class="num">05</div><div class="t">Structured Quality Assurance</div><div class="d">SOPs, checklists, and routine inspections built into every service.</div></div>
+    <div class="why-item reveal reveal-delay-2"><div class="num">06</div><div class="t">Transparent Pricing</div><div class="d">Clear reporting and performance tracking, with no hidden costs.</div></div>
+  </div>
+</section>
+
+<!-- Who We Serve -->
+<section class="section alt">
+  <p class="section-label reveal">Who We Serve</p>
+  <h2 class="section-title reveal">Client Segments</h2>
+  <div class="serve-grid">
+    <div class="serve-card reveal"><div class="icon">🏢</div><div class="t">Corporate Offices</div></div>
+    <div class="serve-card reveal reveal-delay-1"><div class="icon">🏘️</div><div class="t">Residential Estates</div></div>
+    <div class="serve-card reveal reveal-delay-2"><div class="icon">🎓</div><div class="t">Educational Institutions</div></div>
+    <div class="serve-card reveal reveal-delay-3"><div class="icon">🏨</div><div class="t">Hospitality &amp; Events</div></div>
+    <div class="serve-card reveal"><div class="icon">🏥</div><div class="t">Healthcare Facilities</div></div>
+  </div>
+</section>
+
+<!-- QA & Sustainability -->
+<section class="section">
+  <p class="section-label reveal">Our Commitment</p>
+  <h2 class="section-title reveal">Quality, Health &amp; Sustainability</h2>
+  <div class="split-cols">
+    <div class="split-card reveal">
+      <h3>Quality Assurance</h3>
+      <ul>
+        <li><span class="check">✓</span> Pre-service site assessment and scope validation</li>
+        <li><span class="check">✓</span> Documented Standard Operating Procedures</li>
+        <li><span class="check">✓</span> Routine on-site inspections and audits</li>
+        <li><span class="check">✓</span> Periodic quality reports and dedicated account managers</li>
+        <li><span class="check">✓</span> Corrective action plans and service guarantees</li>
+      </ul>
+    </div>
+    <div class="split-card reveal reveal-delay-1">
+      <h3>Sustainability, Health &amp; Safety</h3>
+      <ul>
+        <li><span class="check">✓</span> Environmentally responsible cleaning products</li>
+        <li><span class="check">✓</span> Safe chemical storage and handling procedures</li>
+        <li><span class="check">✓</span> Mandatory PPE and safety compliance for all staff</li>
+        <li><span class="check">✓</span> Waste minimization, segregation, and proper disposal</li>
+        <li><span class="check">✓</span> Energy-efficient equipment where possible</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Band -->
+<div class="cta-band">
+  <div class="cta-text">Ready for a cleaner,<br>healthier space?</div>
+  <a href="#quote" class="btn-light">Request a Quote →</a>
+</div>
+
+<!-- Contact -->
+<section class="section" id="contact">
+  <div class="contact-section">
+    <div>
+      <p class="section-label reveal">Get In Touch</p>
+      <h2 class="section-title reveal">Contact Us</h2>
+      <p class="section-sub reveal">Reach out for a free consultation or to request a service quote.</p>
+      <div class="contact-info-list">
+        <div class="contact-item reveal">
+          <div class="contact-icon">📍</div>
+          <div><div class="contact-label">Registered Office</div><div class="contact-val">2, Mustapha Close, Cement, Dopemu, Lagos</div></div>
+        </div>
+        <div class="contact-item reveal reveal-delay-1">
+          <div class="contact-icon">🏢</div>
+          <div><div class="contact-label">Operations Office</div><div class="contact-val"><span class="ph">[Operations Office Address]</span></div></div>
+        </div>
+        <div class="contact-item reveal reveal-delay-2">
+          <div class="contact-icon">📞</div>
+          <div><div class="contact-label">Phone</div><div class="contact-val"><span class="ph">[Phone Number]</span></div></div>
+        </div>
+        <div class="contact-item reveal reveal-delay-3">
+          <div class="contact-icon">✉️</div>
+          <div><div class="contact-label">Email</div><div class="contact-val"><span class="ph">[email@emphilecleaning.com]</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-panel reveal" id="quote">
+      <div class="form-title">Request a Quote</div>
+      <div class="form-sub">Tell us about your space and we'll get back to you with a tailored quote.</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">FIRST NAME</label><input type="text" class="form-input" placeholder="First name"></div>
+        <div class="form-group"><label class="form-label">LAST NAME</label><input type="text" class="form-input" placeholder="Last name"></div>
+      </div>
+      <div class="form-group"><label class="form-label">EMAIL ADDRESS</label><input type="email" class="form-input" placeholder="you@example.com"></div>
+      <div class="form-group"><label class="form-label">PHONE NUMBER</label><input type="tel" class="form-input" placeholder="Phone number"></div>
+      <div class="form-group">
+        <label class="form-label">SERVICE REQUIRED</label>
+        <select class="form-select">
+          <option value="">Select a service</option>
+          <option>Commercial &amp; Office Cleaning</option>
+          <option>Green Cleaning Solutions</option>
+          <option>Residential Cleaning</option>
+          <option>Carpet &amp; Upholstery Cleaning</option>
+          <option>Floor Care Services</option>
+          <option>Window Cleaning</option>
+          <option>Post-Construction Cleaning</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">ADDITIONAL DETAILS</label><textarea class="form-textarea" placeholder="Tell us more about your space or requirements..."></textarea></div>
+      <button class="form-submit" onclick="handleSubmit(this)" type="button">Send Request →</button>
+      <p class="form-note">This form is a static demo — connect it to an email service or backend before going live.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand"><div class="nav-logo-mark">EC</div><div class="footer-brand-name">Emphile Cleaning Solutions</div></div>
+      <p class="footer-desc">Professional, sustainable cleaning and facility support for corporate, commercial, and residential clients.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Services</div>
+      <ul class="footer-links">
+        <li><a href="#services">Commercial Cleaning</a></li>
+        <li><a href="#services">Green Cleaning</a></li>
+        <li><a href="#services">Residential Cleaning</a></li>
+        <li><a href="#services">Carpet &amp; Floor Care</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="#about">About Us</a></li>
+        <li><a href="#why">Why Choose Us</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Contact</div>
+      <ul class="footer-links">
+        <li><a href="#" class="ph">[Phone Number]</a></li>
+        <li><a href="#" class="ph">[Email Address]</a></li>
+        <li><a href="#" class="ph">[Operations Office Address]</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Emphile Cleaning Solutions Ltd · All Rights Reserved</span>
+    <span>RC <span class="ph">[RC Number]</span></span>
+  </div>
+</footer>
+
+<script>
+  const nav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => nav.style.boxShadow = window.scrollY > 40 ? '0 4px 20px rgba(0,0,0,0.05)' : 'none');
+
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => obs.observe(el));
+
+  function handleSubmit(btn) {
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✓ This is a demo form — no request was actually sent';
+      btn.style.background = '#0B4630';
+    }, 1000);
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+</script>
+</body>
+</html>
