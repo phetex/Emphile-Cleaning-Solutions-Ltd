@@ -161,6 +161,29 @@
   .feature-pill .label { font-size: 14px; font-weight: 600; color: var(--ink); }
   .feature-pill .sub { font-size: 12.5px; color: var(--muted); }
 
+  /* Photo banner */
+  .photo-banner { position: relative; height: 440px; overflow: hidden; }
+  .photo-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-banner .caption {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(0deg, rgba(11,70,48,0.92) 0%, rgba(11,70,48,0.55) 55%, transparent 100%);
+    color: #fff; padding: 60px 48px 32px;
+  }
+  .photo-banner .caption h3 { font-size: clamp(22px, 3vw, 32px); font-weight: 600; margin-bottom: 6px; }
+  .photo-banner .caption p { font-size: 14.5px; color: rgba(255,255,255,0.82); max-width: 480px; }
+
+  /* Gallery */
+  .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .gallery-item { position: relative; border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 3; }
+  .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.45s ease; }
+  .gallery-item:hover img { transform: scale(1.07); }
+  .gallery-item .tag {
+    position: absolute; left: 12px; bottom: 12px;
+    background: rgba(11,70,48,0.88); color: #fff;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+    padding: 6px 13px; border-radius: 999px;
+  }
+
   /* Sections */
   .section { padding: 100px 48px; }
   .section-label {
@@ -296,6 +319,8 @@
     .contact-section { grid-template-columns: 1fr; }
     .footer-top { grid-template-columns: 1fr 1fr; }
     .feature-strip { grid-template-columns: repeat(2, 1fr); }
+    .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    .photo-banner { height: 340px; }
   }
   @media (max-width: 768px) {
     nav { padding: 14px 20px; }
@@ -304,6 +329,9 @@
     .hero-leaf { display: none; }
     .section { padding: 64px 20px; }
     .services-grid, .why-grid, .serve-grid { grid-template-columns: 1fr; }
+    .gallery-grid { grid-template-columns: 1fr; }
+    .photo-banner { height: 280px; }
+    .photo-banner .caption { padding: 40px 20px 22px; }
     .feature-strip { grid-template-columns: 1fr; padding: 24px 20px; }
     .cta-band { flex-direction: column; text-align: center; padding: 50px 20px; }
     .footer-top { grid-template-columns: 1fr; gap: 30px; }
@@ -321,6 +349,7 @@
   </a>
   <ul class="nav-links">
     <li><a href="#services">Services</a></li>
+    <li><a href="#gallery">Gallery</a></li>
     <li><a href="#about">About</a></li>
     <li><a href="#why">Why Us</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -358,6 +387,15 @@
   <div class="feature-pill">
     <div class="icon">🛡️</div>
     <div><div class="label">Insured &amp; Compliant</div><div class="sub">Fully licensed operations</div></div>
+  </div>
+</div>
+
+<!-- Photo Banner -->
+<div class="photo-banner">
+  <img src="https://images.unsplash.com/photo-1437326300822-01d8f13c024f?w=1600&q=80&auto=format&fit=crop" alt="Professional cleaner mopping a modern commercial hallway" loading="lazy">
+  <div class="caption">
+    <h3>Trained teams, real results.</h3>
+    <p>From daily office upkeep to deep cleans — our crews show up prepared, uniformed, and ready to deliver.</p>
   </div>
 </div>
 
@@ -411,6 +449,39 @@
       <div class="service-icon">🐜</div>
       <div class="service-name">Pest Control &amp; Specialized Cleaning</div>
       <p class="service-desc">Environmentally safe pest management, plus tailored cleaning for schools, hospitality, and healthcare settings.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Gallery -->
+<section class="section" id="gallery">
+  <p class="section-label reveal">Our Work</p>
+  <h2 class="section-title reveal">See Us In Action</h2>
+  <p class="section-sub reveal">A look at the standards we hold ourselves to on every job.</p>
+  <div class="gallery-grid">
+    <div class="gallery-item reveal">
+      <img src="https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=700&q=80&auto=format&fit=crop" alt="Cleaner disinfecting an office surface with a gloved hand" loading="lazy">
+      <span class="tag">Office Cleaning</span>
+    </div>
+    <div class="gallery-item reveal reveal-delay-1">
+      <img src="https://images.unsplash.com/photo-1563453392212-326f5e854473?w=700&q=80&auto=format&fit=crop" alt="Hand in glove holding an eco-friendly cleaning spray bottle" loading="lazy">
+      <span class="tag">Green Cleaning</span>
+    </div>
+    <div class="gallery-item reveal reveal-delay-2">
+      <img src="https://images.unsplash.com/photo-1647381518264-97ff1835026f?w=700&q=80&auto=format&fit=crop" alt="Person sweeping a residential kitchen floor with a broom and dustpan" loading="lazy">
+      <span class="tag">Residential Cleaning</span>
+    </div>
+    <div class="gallery-item reveal">
+      <img src="https://images.unsplash.com/photo-1742483359033-13315b247c74?w=700&q=80&auto=format&fit=crop" alt="Technician in protective gear steam cleaning a carpet" loading="lazy">
+      <span class="tag">Carpet &amp; Upholstery</span>
+    </div>
+    <div class="gallery-item reveal reveal-delay-1">
+      <img src="https://images.unsplash.com/photo-1482449609509-eae2a7ea42b7?w=700&q=80&auto=format&fit=crop" alt="Window cleaners working on the exterior glass facade of a commercial building" loading="lazy">
+      <span class="tag">Window Cleaning</span>
+    </div>
+    <div class="gallery-item reveal reveal-delay-2">
+      <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=700&q=80&auto=format&fit=crop" alt="Cleaner in protective mask and gloves cleaning window shutters" loading="lazy">
+      <span class="tag">Detail Cleaning</span>
     </div>
   </div>
 </section>
