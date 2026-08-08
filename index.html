@@ -353,6 +353,19 @@
   .reveal-delay-2 { transition-delay: 0.16s; }
   .reveal-delay-3 { transition-delay: 0.24s; }
 
+  /* Floating call button */
+  .float-call {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    display: flex; align-items: center; gap: 9px;
+    background: var(--green-dk); color: #fff;
+    padding: 14px 22px; border-radius: 999px;
+    text-decoration: none; font-weight: 600; font-size: 14.5px;
+    box-shadow: 0 8px 24px rgba(11,70,48,0.35);
+    transition: background 0.2s, transform 0.15s;
+  }
+  .float-call:hover { background: var(--green); transform: translateY(-2px); }
+  .float-call .icon { font-size: 17px; }
+
   /* Responsive */
   @media (max-width: 1024px) {
     .services-grid { grid-template-columns: repeat(2, 1fr); }
@@ -381,6 +394,7 @@
     .cta-band { flex-direction: column; text-align: center; padding: 50px 20px; }
     .footer-top { grid-template-columns: 1fr; gap: 30px; }
     .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
+    .float-call { bottom: 16px; right: 16px; padding: 13px 18px; font-size: 13.5px; }
   }
 </style>
 </head>
@@ -710,6 +724,8 @@
     <span>RC <span class="ph">[RC Number]</span></span>
   </div>
 </footer>
+
+<a href="tel:+2347067098658" class="float-call"><span class="icon">📞</span> Call Now</a>
 
 <script>
   const nav = document.getElementById('mainNav');
