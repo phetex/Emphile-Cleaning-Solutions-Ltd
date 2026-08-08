@@ -34,11 +34,16 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
 <script>
+  const SUPABASE_FN_URL = 'https://izjsoqcpzqxbmluzsepu.supabase.co/functions/v1/verify-payment';
+  const PAYSTACK_PUBLIC_KEY = 'pk_test_9528d7042cbcff3e77bba8f1df69c555718f56d9';
+
   const welcomeTitle = document.getElementById('welcomeTitle');
   const welcomeSub = document.getElementById('welcomeSub');
   const content = document.getElementById('content');
   const logoutBtn = document.getElementById('logoutBtn');
+  let currentUserEmail = '';
 
   function fmtNaira(n) {
     return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -70,10 +75,18 @@
     const name = profile && profile.full_name ? profile.full_name : user.email;
     welcomeTitle.textContent = 'Welcome, ' + name;
     welcomeSub.textContent = user.email;
+    currentUserEmail = user.email;
+
+    await loadInvoices();
+  })();
+
+  async function loadInvoices() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const user = session.user;
 
     const { data: invoices, error } = await supabaseClient
       .from('invoices')
-      .select('service_type, job_date, amount, status, notes')
+      .select('id, service_type, job_date, amount, status, notes')
       .eq('customer_id', user.id)
       .order('job_date', { ascending: false });
 
@@ -93,18 +106,59 @@
         <td>${fmtDate(inv.job_date)}</td>
         <td>${fmtNaira(inv.amount)}</td>
         <td><span class="status-pill status-${inv.status}">${inv.status}</span></td>
+        <td>${inv.status !== 'Paid' ? `<button class="btn-pay" data-id="${inv.id}" data-amount="${inv.amount}">Pay Now</button>` : ''}</td>
       </tr>
     `).join('');
 
     content.innerHTML = `
       <table class="invoice-table">
         <thead>
-          <tr><th>Service</th><th>Job date</th><th>Amount</th><th>Status</th></tr>
+          <tr><th>Service</th><th>Job date</th><th>Amount</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     `;
-  })();
+
+    content.querySelectorAll('.btn-pay').forEach((btn) => {
+      btn.addEventListener('click', () => payInvoice(btn.getAttribute('data-id'), parseFloat(btn.getAttribute('data-amount')), btn));
+    });
+  }
+
+  function payInvoice(invoiceId, amount, btn) {
+    const handler = PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: currentUserEmail,
+      amount: Math.round(amount * 100),
+      currency: 'NGN',
+      ref: 'EMP-' + invoiceId.slice(0, 8) + '-' + Date.now(),
+      callback: function (response) {
+        btn.textContent = 'Verifying…';
+        btn.disabled = true;
+        fetch(SUPABASE_FN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'apikey': SUPABASE_KEY,
+          },
+          body: JSON.stringify({ reference: response.reference, invoiceId: invoiceId }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              loadInvoices();
+            } else {
+              alert('Payment received but verification failed. Please contact us with reference: ' + response.reference);
+            }
+          })
+          .catch(() => {
+            alert('Payment received but verification failed. Please contact us with reference: ' + response.reference);
+          });
+      },
+      onClose: function () {},
+    });
+    handler.openIframe();
+  }
 </script>
 </body>
 </html>
