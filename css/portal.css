@@ -101,3 +101,22 @@ main { flex: 1; display: flex; align-items: center; justify-content: center; pad
 .status-Overdue { background: var(--danger-bg); color: var(--danger); }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); background: #fff; border-radius: 12px; border: 1px solid var(--border); }
 .loading-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+
+.admin-wrap { max-width: 1040px; margin: 0 auto; padding: 48px 20px; width: 100%; }
+.admin-section { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 28px; margin-bottom: 28px; }
+.admin-section h2 { font-size: 19px; color: var(--green-dk); margin-bottom: 18px; }
+.admin-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.admin-form-grid .full { grid-column: 1 / -1; }
+select.form-input { appearance: none; background-color: #fff; }
+.invoice-table select.form-input { padding: 8px 10px; font-size: 13px; border-radius: 6px; }
+.invoice-table td.customer-cell { line-height: 1.4; }
+.invoice-table td.customer-cell .email { display: block; font-size: 12px; color: var(--muted); }
+.btn-delete {
+  background: var(--danger-bg); color: var(--danger); border: none;
+  padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+}
+.btn-delete:hover { opacity: 0.85; }
+@media (max-width: 640px) {
+  .admin-form-grid { grid-template-columns: 1fr; }
+}

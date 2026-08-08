@@ -54,22 +54,34 @@
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Log in';
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
     if (error) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Log in';
       errorAlert.textContent = error.message;
       errorAlert.classList.add('show');
       return;
     }
-    window.location.href = 'portal.html';
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', data.user.id)
+      .single();
+
+    window.location.href = (profile && profile.is_admin) ? 'admin.html' : 'portal.html';
   });
 
   (async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) window.location.href = 'portal.html';
+    if (!session) return;
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', session.user.id)
+      .single();
+    window.location.href = (profile && profile.is_admin) ? 'admin.html' : 'portal.html';
   })();
 </script>
 </body>

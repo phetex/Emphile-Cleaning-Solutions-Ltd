@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | Emphile Cleaning Solutions Ltd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>ADMIN</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+  </ul>
+</nav>
+<div class="admin-wrap">
+  <div class="portal-header">
+    <div>
+      <h1 id="welcomeTitle">Admin dashboard</h1>
+      <p id="welcomeSub">Loading…</p>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Log out</button>
+  </div>
+
+  <div class="admin-section">
+    <h2>Add invoice</h2>
+    <div class="alert alert-error" id="formError"></div>
+    <div class="alert alert-success" id="formSuccess"></div>
+    <form id="invoiceForm">
+      <div class="admin-form-grid">
+        <div class="form-group">
+          <label class="form-label">CUSTOMER</label>
+          <select class="form-input" id="customerId" required>
+            <option value="">Select a customer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">SERVICE TYPE</label>
+          <select class="form-input" id="serviceType" required>
+            <option value="">Select a service</option>
+            <option>Commercial & Office Cleaning</option>
+            <option>Green Cleaning Solutions</option>
+            <option>Residential Cleaning</option>
+            <option>Carpet & Upholstery Cleaning</option>
+            <option>Floor Care Services</option>
+            <option>Window Cleaning</option>
+            <option>Post-Construction Cleaning</option>
+            <option>Waste Management Support</option>
+            <option>Pest Control & Specialized Cleaning</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">JOB DATE</label>
+          <input type="date" class="form-input" id="jobDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">AMOUNT (NGN)</label>
+          <input type="number" class="form-input" id="amount" min="0" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">STATUS</label>
+          <select class="form-input" id="status">
+            <option>Pending</option>
+            <option>Paid</option>
+            <option>Overdue</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">NOTES</label>
+          <input type="text" class="form-input" id="notes" placeholder="Optional">
+        </div>
+      </div>
+      <button type="submit" class="form-submit" id="submitBtn" style="max-width:220px;margin-top:20px;">Add invoice</button>
+    </form>
+  </div>
+
+  <div class="admin-section">
+    <h2>All invoices</h2>
+    <div id="invoicesContent"><div class="loading-state">Loading invoices…</div></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+  const welcomeTitle = document.getElementById('welcomeTitle');
+  const welcomeSub = document.getElementById('welcomeSub');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const invoicesContent = document.getElementById('invoicesContent');
+  const customerSelect = document.getElementById('customerId');
+  const invoiceForm = document.getElementById('invoiceForm');
+  const formError = document.getElementById('formError');
+  const formSuccess = document.getElementById('formSuccess');
+  const submitBtn = document.getElementById('submitBtn');
+
+  let profilesById = {};
+
+  function fmtNaira(n) {
+    return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  logoutBtn.addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'login.html';
+  });
+
+  async function loadCustomers() {
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, email')
+      .order('full_name', { ascending: true });
+
+    (profiles || []).forEach((p) => {
+      profilesById[p.id] = p;
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = (p.full_name || 'Unnamed') + ' — ' + (p.email || 'no email');
+      customerSelect.appendChild(opt);
+    });
+  }
+
+  async function loadInvoices() {
+    const { data: invoices, error } = await supabaseClient
+      .from('invoices')
+      .select('id, customer_id, service_type, job_date, amount, status, notes')
+      .order('job_date', { ascending: false });
+
+    if (error) {
+      invoicesContent.innerHTML = '<div class="empty-state">Couldn\'t load invoices right now.</div>';
+      return;
+    }
+    if (!invoices || invoices.length === 0) {
+      invoicesContent.innerHTML = '<div class="empty-state">No invoices yet. Add one above.</div>';
+      return;
+    }
+
+    const rows = invoices.map((inv) => {
+      const customer = profilesById[inv.customer_id];
+      const customerLabel = customer ? (customer.full_name || customer.email || inv.customer_id) : inv.customer_id;
+      const customerEmail = customer && customer.full_name ? customer.email : '';
+      return `
+        <tr data-id="${inv.id}">
+          <td class="customer-cell">${customerLabel}${customerEmail ? '<span class="email">' + customerEmail + '</span>' : ''}</td>
+          <td>${inv.service_type}</td>
+          <td>${fmtDate(inv.job_date)}</td>
+          <td>${fmtNaira(inv.amount)}</td>
+          <td>
+            <select class="form-input status-select" data-id="${inv.id}">
+              <option ${inv.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option ${inv.status === 'Paid' ? 'selected' : ''}>Paid</option>
+              <option ${inv.status === 'Overdue' ? 'selected' : ''}>Overdue</option>
+            </select>
+          </td>
+          <td><button class="btn-delete" data-id="${inv.id}">Delete</button></td>
+        </tr>
+      `;
+    }).join('');
+
+    invoicesContent.innerHTML = `
+      <table class="invoice-table">
+        <thead>
+          <tr><th>Customer</th><th>Service</th><th>Job date</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+
+    invoicesContent.querySelectorAll('.status-select').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        const id = sel.getAttribute('data-id');
+        await supabaseClient.from('invoices').update({ status: sel.value }).eq('id', id);
+      });
+    });
+
+    invoicesContent.querySelectorAll('.btn-delete').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this invoice? This cannot be undone.')) return;
+        const id = btn.getAttribute('data-id');
+        await supabaseClient.from('invoices').delete().eq('id', id);
+        await loadInvoices();
+      });
+    });
+  }
+
+  invoiceForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError.classList.remove('show');
+    formSuccess.classList.remove('show');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding…';
+
+    const payload = {
+      customer_id: document.getElementById('customerId').value,
+      service_type: document.getElementById('serviceType').value,
+      job_date: document.getElementById('jobDate').value || null,
+      amount: parseFloat(document.getElementById('amount').value),
+      status: document.getElementById('status').value,
+      notes: document.getElementById('notes').value || null,
+    };
+
+    const { error } = await supabaseClient.from('invoices').insert(payload);
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Add invoice';
+
+    if (error) {
+      formError.textContent = error.message;
+      formError.classList.add('show');
+      return;
+    }
+
+    formSuccess.textContent = 'Invoice added.';
+    formSuccess.classList.add('show');
+    invoiceForm.reset();
+    await loadInvoices();
+  });
+
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('full_name, is_admin')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!profile || !profile.is_admin) {
+      window.location.href = 'portal.html';
+      return;
+    }
+
+    welcomeTitle.textContent = 'Admin dashboard';
+    welcomeSub.textContent = 'Signed in as ' + session.user.email;
+
+    await loadCustomers();
+    await loadInvoices();
+  })();
+</script>
+</body>
+</html>
