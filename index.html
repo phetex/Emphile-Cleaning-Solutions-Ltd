@@ -659,29 +659,32 @@
     <div class="form-panel reveal" id="quote">
       <div class="form-title">Request a Quote</div>
       <div class="form-sub">Tell us about your space and we'll get back to you with a tailored quote.</div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">FIRST NAME</label><input type="text" class="form-input" placeholder="First name"></div>
-        <div class="form-group"><label class="form-label">LAST NAME</label><input type="text" class="form-input" placeholder="Last name"></div>
-      </div>
-      <div class="form-group"><label class="form-label">EMAIL ADDRESS</label><input type="email" class="form-input" placeholder="you@example.com"></div>
-      <div class="form-group"><label class="form-label">PHONE NUMBER</label><input type="tel" class="form-input" placeholder="Phone number"></div>
-      <div class="form-group">
-        <label class="form-label">SERVICE REQUIRED</label>
-        <select class="form-select">
-          <option value="">Select a service</option>
-          <option>Commercial &amp; Office Cleaning</option>
-          <option>Green Cleaning Solutions</option>
-          <option>Residential Cleaning</option>
-          <option>Carpet &amp; Upholstery Cleaning</option>
-          <option>Floor Care Services</option>
-          <option>Window Cleaning</option>
-          <option>Post-Construction Cleaning</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">ADDITIONAL DETAILS</label><textarea class="form-textarea" placeholder="Tell us more about your space or requirements..."></textarea></div>
-      <button class="form-submit" onclick="handleSubmit(this)" type="button">Send Request →</button>
-      <p class="form-note">This form is a static demo — connect it to an email service or backend before going live.</p>
+      <div class="alert alert-error" id="quoteError" style="display:none;background:#FCEBEB;color:#A32D2D;padding:12px 16px;border-radius:8px;font-size:13.5px;margin-bottom:16px;"></div>
+      <form id="quoteForm">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">FIRST NAME</label><input type="text" class="form-input" id="qFirstName" placeholder="First name" required></div>
+          <div class="form-group"><label class="form-label">LAST NAME</label><input type="text" class="form-input" id="qLastName" placeholder="Last name"></div>
+        </div>
+        <div class="form-group"><label class="form-label">EMAIL ADDRESS</label><input type="email" class="form-input" id="qEmail" placeholder="you@example.com" required></div>
+        <div class="form-group"><label class="form-label">PHONE NUMBER</label><input type="tel" class="form-input" id="qPhone" placeholder="Phone number"></div>
+        <div class="form-group">
+          <label class="form-label">SERVICE REQUIRED</label>
+          <select class="form-select" id="qService">
+            <option value="">Select a service</option>
+            <option>Commercial &amp; Office Cleaning</option>
+            <option>Green Cleaning Solutions</option>
+            <option>Residential Cleaning</option>
+            <option>Carpet &amp; Upholstery Cleaning</option>
+            <option>Floor Care Services</option>
+            <option>Window Cleaning</option>
+            <option>Post-Construction Cleaning</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">ADDITIONAL DETAILS</label><textarea class="form-textarea" id="qDetails" placeholder="Tell us more about your space or requirements..."></textarea></div>
+        <button class="form-submit" id="quoteSubmitBtn" type="submit">Send Request →</button>
+      </form>
+      <p class="form-note">Submitting this form sends your request directly to our team by email.</p>
     </div>
   </div>
 </section>
@@ -737,14 +740,54 @@
   }, { threshold: 0.12 });
   reveals.forEach(el => obs.observe(el));
 
-  function handleSubmit(btn) {
-    btn.textContent = 'Sending…';
-    btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = '✓ This is a demo form — no request was actually sent';
-      btn.style.background = '#0B4630';
-    }, 1000);
-  }
+  const SUPABASE_URL = 'https://izjsoqcpzqxbmluzsepu.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_IlWbqiVDMdfAL1hOnPGr8g_-7PkHpuv';
+
+  const quoteForm = document.getElementById('quoteForm');
+  const quoteSubmitBtn = document.getElementById('quoteSubmitBtn');
+  const quoteError = document.getElementById('quoteError');
+
+  quoteForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    quoteError.style.display = 'none';
+    quoteSubmitBtn.disabled = true;
+    quoteSubmitBtn.textContent = 'Sending…';
+
+    const payload = {
+      firstName: document.getElementById('qFirstName').value.trim(),
+      lastName: document.getElementById('qLastName').value.trim(),
+      email: document.getElementById('qEmail').value.trim(),
+      phone: document.getElementById('qPhone').value.trim(),
+      service: document.getElementById('qService').value,
+      details: document.getElementById('qDetails').value.trim(),
+    };
+
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/send-quote-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'apikey': SUPABASE_KEY,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Something went wrong. Please try again.');
+      }
+
+      quoteSubmitBtn.textContent = '✓ Request sent — we\'ll be in touch shortly';
+      quoteSubmitBtn.style.background = '#0B4630';
+      quoteForm.reset();
+    } catch (err) {
+      quoteSubmitBtn.disabled = false;
+      quoteSubmitBtn.textContent = 'Send Request →';
+      quoteError.textContent = 'Couldn\'t send your request right now. Please call or email us directly.';
+      quoteError.style.display = 'block';
+    }
+  });
 
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
