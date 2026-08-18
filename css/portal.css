@@ -109,6 +109,16 @@ main { flex: 1; display: flex; align-items: center; justify-content: center; pad
 .btn-pay:hover { background: var(--green); }
 .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; }
 
+.job-list { display: flex; flex-direction: column; gap: 16px; }
+.job-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+.job-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.job-service { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--green-dk); }
+.job-customer { font-size: 13.5px; color: var(--ink); margin-top: 2px; }
+.job-address { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.job-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--muted); padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.job-notes { font-size: 13px; color: var(--muted); background: var(--mint); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; }
+.job-actions { display: flex; justify-content: flex-end; }
+
 .admin-wrap { max-width: 1040px; margin: 0 auto; padding: 48px 20px; width: 100%; }
 .admin-section { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 28px; margin-bottom: 28px; }
 .admin-section h2 { font-size: 19px; color: var(--green-dk); margin-bottom: 18px; }

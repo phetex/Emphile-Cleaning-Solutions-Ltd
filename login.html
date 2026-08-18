@@ -68,22 +68,28 @@
 
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('is_admin')
+      .select('is_admin, is_staff')
       .eq('id', data.user.id)
       .single();
 
-    window.location.href = (profile && profile.is_admin) ? 'admin.html' : 'portal.html';
+    window.location.href = redirectFor(profile);
   });
+
+  function redirectFor(profile) {
+    if (profile && profile.is_admin) return 'admin.html';
+    if (profile && profile.is_staff) return 'staff-portal.html';
+    return 'portal.html';
+  }
 
   (async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('is_admin')
+      .select('is_admin, is_staff')
       .eq('id', session.user.id)
       .single();
-    window.location.href = (profile && profile.is_admin) ? 'admin.html' : 'portal.html';
+    window.location.href = redirectFor(profile);
   })();
 </script>
 </body>

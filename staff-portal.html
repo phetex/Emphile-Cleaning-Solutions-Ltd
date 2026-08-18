@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Portal | Emphile Cleaning Solutions Ltd</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>STAFF PORTAL</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+  </ul>
+</nav>
+<div class="portal-wrap">
+  <div class="portal-header">
+    <div>
+      <h1 id="welcomeTitle">Welcome</h1>
+      <p id="welcomeSub">Loading your jobs…</p>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Log out</button>
+  </div>
+  <div id="content">
+    <div class="loading-state">Loading your assigned jobs…</div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+  const welcomeTitle = document.getElementById('welcomeTitle');
+  const welcomeSub = document.getElementById('welcomeSub');
+  const content = document.getElementById('content');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  function fmtNaira(n) {
+    return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+  function fmtTime(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  logoutBtn.addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'login.html';
+  });
+
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+    const user = session.user;
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('full_name, is_staff')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || !profile.is_staff) {
+      window.location.href = 'portal.html';
+      return;
+    }
+
+    welcomeTitle.textContent = 'Welcome, ' + (profile.full_name || user.email);
+    welcomeSub.textContent = 'Here are the jobs assigned to you.';
+
+    await loadJobs();
+  })();
+
+  async function loadJobs() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const user = session.user;
+
+    const { data: jobs, error } = await supabaseClient
+      .from('invoices')
+      .select('id, customer_id, service_type, job_date, notes, job_status, clock_in_at, clock_out_at')
+      .eq('assigned_staff_id', user.id)
+      .order('job_date', { ascending: true });
+
+    if (error) {
+      content.innerHTML = '<div class="empty-state">Couldn\'t load your jobs right now. Please try again shortly.</div>';
+      return;
+    }
+
+    if (!jobs || jobs.length === 0) {
+      content.innerHTML = '<div class="empty-state">No jobs assigned to you yet.</div>';
+      return;
+    }
+
+    const customerIds = [...new Set(jobs.map((j) => j.customer_id))];
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, phone, address')
+      .in('id', customerIds);
+    const profilesById = {};
+    (profiles || []).forEach((p) => { profilesById[p.id] = p; });
+
+    const cards = jobs.map((job) => {
+      const customer = profilesById[job.customer_id];
+      const customerName = customer && customer.full_name ? customer.full_name : 'Customer';
+      const address = customer && customer.address ? customer.address : 'No address on file';
+      const phone = customer && customer.phone ? customer.phone : '—';
+
+      let actionHtml = '';
+      if (job.job_status === 'Completed') {
+        actionHtml = '<span class="status-pill status-Paid">Completed</span>';
+      } else if (job.clock_in_at && !job.clock_out_at) {
+        actionHtml = '<button class="btn-pay" data-action="clockout" data-id="' + job.id + '">Clock Out &amp; Complete</button>';
+      } else {
+        actionHtml = '<button class="btn-pay" data-action="clockin" data-id="' + job.id + '">Clock In &amp; Start Job</button>';
+      }
+
+      return `
+        <div class="job-card">
+          <div class="job-card-header">
+            <div>
+              <div class="job-service">${job.service_type}</div>
+              <div class="job-customer">${customerName} &middot; ${phone}</div>
+              <div class="job-address">${address}</div>
+            </div>
+            <span class="status-pill status-Pending">${job.job_status}</span>
+          </div>
+          <div class="job-meta">
+            <span>Job date: ${fmtDate(job.job_date)}</span>
+            <span>Clocked in: ${fmtTime(job.clock_in_at)}</span>
+            <span>Clocked out: ${fmtTime(job.clock_out_at)}</span>
+          </div>
+          ${job.notes ? '<div class="job-notes">' + job.notes + '</div>' : ''}
+          <div class="job-actions">${actionHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    content.innerHTML = '<div class="job-list">' + cards + '</div>';
+
+    content.querySelectorAll('[data-action="clockin"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Clocking in…';
+        await supabaseClient.from('invoices').update({
+          clock_in_at: new Date().toISOString(),
+          job_status: 'In Progress',
+        }).eq('id', btn.getAttribute('data-id'));
+        await loadJobs();
+      });
+    });
+
+    content.querySelectorAll('[data-action="clockout"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Clocking out…';
+        await supabaseClient.from('invoices').update({
+          clock_out_at: new Date().toISOString(),
+          job_status: 'Completed',
+        }).eq('id', btn.getAttribute('data-id'));
+        await loadJobs();
+      });
+    });
+  }
+</script>
+</body>
+</html>

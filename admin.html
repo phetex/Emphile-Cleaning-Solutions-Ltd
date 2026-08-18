@@ -82,7 +82,24 @@
   </div>
 
   <div class="admin-section">
-    <h2>All invoices</h2>
+    <h2>Manage staff</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;">Staff must sign up for an account first (same signup page as customers), then look them up here by email to grant staff access.</p>
+    <div class="alert alert-error" id="staffError" style="display:none;background:#FCEBEB;color:#A32D2D;padding:12px 16px;border-radius:8px;font-size:13.5px;margin-bottom:16px;"></div>
+    <div class="admin-form-grid">
+      <div class="form-group">
+        <label class="form-label">STAFF EMAIL</label>
+        <input type="email" class="form-input" id="staffEmail" placeholder="staff@example.com">
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;gap:10px;">
+        <button type="button" class="btn-pay" id="grantStaffBtn" style="padding:12px 20px;">Grant staff access</button>
+        <button type="button" class="btn-delete" id="revokeStaffBtn">Revoke</button>
+      </div>
+    </div>
+    <div id="staffListContent" style="margin-top:20px;"></div>
+  </div>
+
+  <div class="admin-section">
+    <h2>All invoices / jobs</h2>
     <div id="invoicesContent"><div class="loading-state">Loading invoices…</div></div>
   </div>
 </div>
@@ -100,6 +117,7 @@
   const submitBtn = document.getElementById('submitBtn');
 
   let profilesById = {};
+  let staffProfiles = [];
 
   function fmtNaira(n) {
     return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -129,10 +147,55 @@
     });
   }
 
+  async function loadStaffList() {
+    const { data: staff } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('is_staff', true)
+      .order('full_name', { ascending: true });
+
+    staffProfiles = staff || [];
+
+    const staffListContent = document.getElementById('staffListContent');
+    if (staffProfiles.length === 0) {
+      staffListContent.innerHTML = '<p style="font-size:13px;color:var(--faint);">No staff accounts yet.</p>';
+    } else {
+      staffListContent.innerHTML = '<p style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;">CURRENT STAFF</p>' +
+        staffProfiles.map((s) => '<span class="status-pill status-Paid" style="margin:0 6px 6px 0;display:inline-block;">' + (s.full_name || s.email) + '</span>').join('');
+    }
+  }
+
+  document.getElementById('grantStaffBtn').addEventListener('click', () => setStaffStatus(true));
+  document.getElementById('revokeStaffBtn').addEventListener('click', () => setStaffStatus(false));
+
+  async function setStaffStatus(isStaff) {
+    const staffError = document.getElementById('staffError');
+    staffError.style.display = 'none';
+    const email = document.getElementById('staffEmail').value.trim();
+    if (!email) return;
+
+    const { data: found, error: lookupError } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (lookupError || !found) {
+      staffError.textContent = 'No account found with that email. They need to sign up first.';
+      staffError.style.display = 'block';
+      return;
+    }
+
+    await supabaseClient.from('profiles').update({ is_staff: isStaff }).eq('id', found.id);
+    document.getElementById('staffEmail').value = '';
+    await loadStaffList();
+    await loadInvoices();
+  }
+
   async function loadInvoices() {
     const { data: invoices, error } = await supabaseClient
       .from('invoices')
-      .select('id, customer_id, service_type, job_date, amount, status, notes')
+      .select('id, customer_id, service_type, job_date, amount, status, notes, assigned_staff_id, job_status, clock_in_at, clock_out_at')
       .order('job_date', { ascending: false });
 
     if (error) {
@@ -143,6 +206,9 @@
       invoicesContent.innerHTML = '<div class="empty-state">No invoices yet. Add one above.</div>';
       return;
     }
+
+    const staffOptions = (selectedId) => '<option value="">Unassigned</option>' +
+      staffProfiles.map((s) => '<option value="' + s.id + '" ' + (s.id === selectedId ? 'selected' : '') + '>' + (s.full_name || s.email) + '</option>').join('');
 
     const rows = invoices.map((inv) => {
       const customer = profilesById[inv.customer_id];
@@ -161,6 +227,10 @@
               <option ${inv.status === 'Overdue' ? 'selected' : ''}>Overdue</option>
             </select>
           </td>
+          <td>
+            <select class="form-input staff-select" data-id="${inv.id}">${staffOptions(inv.assigned_staff_id)}</select>
+            <div style="font-size:11px;color:var(--faint);margin-top:4px;">${inv.job_status}</div>
+          </td>
           <td><button class="btn-delete" data-id="${inv.id}">Delete</button></td>
         </tr>
       `;
@@ -169,7 +239,7 @@
     invoicesContent.innerHTML = `
       <table class="invoice-table">
         <thead>
-          <tr><th>Customer</th><th>Service</th><th>Job date</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Customer</th><th>Service</th><th>Job date</th><th>Amount</th><th>Payment</th><th>Assigned staff</th><th>Actions</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -179,6 +249,18 @@
       sel.addEventListener('change', async () => {
         const id = sel.getAttribute('data-id');
         await supabaseClient.from('invoices').update({ status: sel.value }).eq('id', id);
+      });
+    });
+
+    invoicesContent.querySelectorAll('.staff-select').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        const id = sel.getAttribute('data-id');
+        const staffId = sel.value || null;
+        await supabaseClient.from('invoices').update({
+          assigned_staff_id: staffId,
+          job_status: staffId ? 'Assigned' : 'Unassigned',
+        }).eq('id', id);
+        await loadInvoices();
       });
     });
 
@@ -234,12 +316,12 @@
 
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('full_name, is_admin')
+      .select('full_name, is_admin, is_staff')
       .eq('id', session.user.id)
       .single();
 
     if (!profile || !profile.is_admin) {
-      window.location.href = 'portal.html';
+      window.location.href = (profile && profile.is_staff) ? 'staff-portal.html' : 'portal.html';
       return;
     }
 
@@ -247,6 +329,7 @@
     welcomeSub.textContent = 'Signed in as ' + session.user.email;
 
     await loadCustomers();
+    await loadStaffList();
     await loadInvoices();
   })();
 </script>
