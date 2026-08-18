@@ -37,7 +37,23 @@
       </div>
       <button type="submit" class="form-submit" id="submitBtn">Log in</button>
     </form>
+    <p class="auth-switch"><a href="#" id="forgotLink">Forgot password?</a></p>
     <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></p>
+  </div>
+
+  <div class="auth-card" id="forgotCard" style="display:none;">
+    <h1 class="auth-title">Reset your password</h1>
+    <p class="auth-sub">Enter your email and we'll send you a reset link.</p>
+    <div class="alert alert-error" id="forgotError"></div>
+    <div class="alert alert-success" id="forgotSuccess"></div>
+    <form id="forgotForm">
+      <div class="form-group">
+        <label class="form-label">EMAIL ADDRESS</label>
+        <input type="email" class="form-input" id="forgotEmail" required>
+      </div>
+      <button type="submit" class="form-submit" id="forgotSubmitBtn">Send reset link</button>
+    </form>
+    <p class="auth-switch"><a href="#" id="backToLoginLink">Back to log in</a></p>
   </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -80,6 +96,51 @@
     if (profile && profile.is_staff) return 'staff-portal.html';
     return 'portal.html';
   }
+
+  const loginCard = document.querySelector('.auth-card');
+  const forgotCard = document.getElementById('forgotCard');
+  const forgotForm = document.getElementById('forgotForm');
+  const forgotError = document.getElementById('forgotError');
+  const forgotSuccess = document.getElementById('forgotSuccess');
+  const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+
+  document.getElementById('forgotLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    loginCard.style.display = 'none';
+    forgotCard.style.display = 'block';
+  });
+
+  document.getElementById('backToLoginLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    forgotCard.style.display = 'none';
+    loginCard.style.display = 'block';
+  });
+
+  forgotForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    forgotError.classList.remove('show');
+    forgotSuccess.classList.remove('show');
+    forgotSubmitBtn.disabled = true;
+    forgotSubmitBtn.textContent = 'Sending…';
+
+    const email = document.getElementById('forgotEmail').value.trim();
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset-password.html',
+    });
+
+    forgotSubmitBtn.disabled = false;
+    forgotSubmitBtn.textContent = 'Send reset link';
+
+    if (error) {
+      forgotError.textContent = error.message;
+      forgotError.classList.add('show');
+      return;
+    }
+
+    forgotSuccess.textContent = 'Check your email for a password reset link.';
+    forgotSuccess.classList.add('show');
+    forgotForm.reset();
+  });
 
   (async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
