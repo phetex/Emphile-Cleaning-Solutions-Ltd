@@ -186,7 +186,23 @@
       return;
     }
 
-    await supabaseClient.from('profiles').update({ is_staff: isStaff }).eq('id', found.id);
+    const { data: updated, error: updateError } = await supabaseClient
+      .from('profiles')
+      .update({ is_staff: isStaff })
+      .eq('id', found.id)
+      .select('id');
+
+    if (updateError) {
+      staffError.textContent = 'Update failed: ' + updateError.message;
+      staffError.style.display = 'block';
+      return;
+    }
+    if (!updated || updated.length === 0) {
+      staffError.textContent = 'Update was blocked by a permissions rule. Make sure the admin update policy has been added in Supabase.';
+      staffError.style.display = 'block';
+      return;
+    }
+
     document.getElementById('staffEmail').value = '';
     await loadStaffList();
     await loadInvoices();
