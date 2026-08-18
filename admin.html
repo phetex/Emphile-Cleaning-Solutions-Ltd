@@ -30,6 +30,36 @@
   </div>
 
   <div class="admin-section">
+    <h2>Follow-ups due</h2>
+    <div id="followupsContent"><div class="loading-state">Loading follow-ups…</div></div>
+  </div>
+
+  <div class="admin-section">
+    <h2>Customer notes</h2>
+    <div class="alert alert-error" id="noteError" style="display:none;background:#FCEBEB;color:#A32D2D;padding:12px 16px;border-radius:8px;font-size:13.5px;margin-bottom:16px;"></div>
+    <form id="noteForm">
+      <div class="admin-form-grid">
+        <div class="form-group">
+          <label class="form-label">CUSTOMER</label>
+          <select class="form-input" id="noteCustomerId" required>
+            <option value="">Select a customer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">FOLLOW-UP DATE (OPTIONAL)</label>
+          <input type="date" class="form-input" id="noteFollowUpDate">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">NOTE</label>
+          <textarea class="form-textarea" id="noteText" placeholder="Call notes, quote discussion, complaint, etc." required></textarea>
+        </div>
+      </div>
+      <button type="submit" class="form-submit" id="noteSubmitBtn" style="max-width:180px;margin-top:20px;">Add note</button>
+    </form>
+    <div id="notesListContent" style="margin-top:24px;"></div>
+  </div>
+
+  <div class="admin-section">
     <h2>Add invoice</h2>
     <div class="alert alert-error" id="formError"></div>
     <div class="alert alert-success" id="formSuccess"></div>
@@ -138,14 +168,160 @@
       .select('id, full_name, email')
       .order('full_name', { ascending: true });
 
+    const noteCustomerSelect = document.getElementById('noteCustomerId');
+
     (profiles || []).forEach((p) => {
       profilesById[p.id] = p;
+      const label = (p.full_name || 'Unnamed') + ' — ' + (p.email || 'no email');
+
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = (p.full_name || 'Unnamed') + ' — ' + (p.email || 'no email');
+      opt.textContent = label;
       customerSelect.appendChild(opt);
+
+      const noteOpt = document.createElement('option');
+      noteOpt.value = p.id;
+      noteOpt.textContent = label;
+      noteCustomerSelect.appendChild(noteOpt);
     });
   }
+
+  function fmtNoteDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  async function loadFollowups() {
+    const followupsContent = document.getElementById('followupsContent');
+    const { data: notes, error } = await supabaseClient
+      .from('customer_notes')
+      .select('id, customer_id, note, follow_up_date')
+      .eq('follow_up_completed', false)
+      .not('follow_up_date', 'is', null)
+      .order('follow_up_date', { ascending: true });
+
+    if (error) {
+      followupsContent.innerHTML = '<div class="empty-state">Couldn\'t load follow-ups right now.</div>';
+      return;
+    }
+    if (!notes || notes.length === 0) {
+      followupsContent.innerHTML = '<div class="empty-state">No follow-ups due. Add a note with a follow-up date below.</div>';
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = notes.map((n) => {
+      const customer = profilesById[n.customer_id];
+      const customerLabel = customer ? (customer.full_name || customer.email) : n.customer_id;
+      const overdue = n.follow_up_date < today;
+      return `
+        <tr data-id="${n.id}">
+          <td class="customer-cell">${customerLabel}</td>
+          <td>${n.note}</td>
+          <td><span class="status-pill ${overdue ? 'status-Overdue' : 'status-Pending'}">${fmtNoteDate(n.follow_up_date)}${overdue ? ' (overdue)' : ''}</span></td>
+          <td><button class="btn-pay" data-mark-done="${n.id}">Mark done</button></td>
+        </tr>
+      `;
+    }).join('');
+
+    followupsContent.innerHTML = `
+      <table class="invoice-table">
+        <thead><tr><th>Customer</th><th>Note</th><th>Follow-up date</th><th>Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+
+    followupsContent.querySelectorAll('[data-mark-done]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        await supabaseClient.from('customer_notes').update({ follow_up_completed: true }).eq('id', btn.getAttribute('data-mark-done'));
+        await loadFollowups();
+        const selectedCustomer = document.getElementById('noteCustomerId').value;
+        if (selectedCustomer) await loadNotesForCustomer(selectedCustomer);
+      });
+    });
+  }
+
+  async function loadNotesForCustomer(customerId) {
+    const notesListContent = document.getElementById('notesListContent');
+    if (!customerId) {
+      notesListContent.innerHTML = '';
+      return;
+    }
+
+    const { data: notes, error } = await supabaseClient
+      .from('customer_notes')
+      .select('id, note, follow_up_date, follow_up_completed, created_at')
+      .eq('customer_id', customerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      notesListContent.innerHTML = '<div class="empty-state">Couldn\'t load notes right now.</div>';
+      return;
+    }
+    if (!notes || notes.length === 0) {
+      notesListContent.innerHTML = '<p style="font-size:13px;color:var(--faint);">No notes yet for this customer.</p>';
+      return;
+    }
+
+    notesListContent.innerHTML = notes.map((n) => `
+      <div class="job-card" style="padding:16px;margin-bottom:12px;">
+        <p style="font-size:13.5px;color:var(--ink);margin-bottom:8px;">${n.note}</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:11.5px;color:var(--faint);">Added ${fmtNoteDate(n.created_at)}${n.follow_up_date ? ' &middot; Follow-up ' + fmtNoteDate(n.follow_up_date) + (n.follow_up_completed ? ' (done)' : '') : ''}</span>
+          <button class="btn-delete" data-delete-note="${n.id}">Delete</button>
+        </div>
+      </div>
+    `).join('');
+
+    notesListContent.querySelectorAll('[data-delete-note]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this note?')) return;
+        await supabaseClient.from('customer_notes').delete().eq('id', btn.getAttribute('data-delete-note'));
+        await loadNotesForCustomer(customerId);
+        await loadFollowups();
+      });
+    });
+  }
+
+  document.getElementById('noteCustomerId').addEventListener('change', (e) => loadNotesForCustomer(e.target.value));
+
+  document.getElementById('noteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const noteError = document.getElementById('noteError');
+    const noteSubmitBtn = document.getElementById('noteSubmitBtn');
+    noteError.style.display = 'none';
+
+    const customerId = document.getElementById('noteCustomerId').value;
+    const noteText = document.getElementById('noteText').value.trim();
+    const followUpDate = document.getElementById('noteFollowUpDate').value || null;
+
+    if (!customerId || !noteText) return;
+
+    noteSubmitBtn.disabled = true;
+    noteSubmitBtn.textContent = 'Adding…';
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const { error } = await supabaseClient.from('customer_notes').insert({
+      customer_id: customerId,
+      created_by: session.user.id,
+      note: noteText,
+      follow_up_date: followUpDate,
+    });
+
+    noteSubmitBtn.disabled = false;
+    noteSubmitBtn.textContent = 'Add note';
+
+    if (error) {
+      noteError.textContent = error.message;
+      noteError.style.display = 'block';
+      return;
+    }
+
+    document.getElementById('noteText').value = '';
+    document.getElementById('noteFollowUpDate').value = '';
+    await loadNotesForCustomer(customerId);
+    await loadFollowups();
+  });
 
   async function loadStaffList() {
     const { data: staff } = await supabaseClient
@@ -347,6 +523,7 @@
     await loadCustomers();
     await loadStaffList();
     await loadInvoices();
+    await loadFollowups();
   })();
 </script>
 </body>
