@@ -511,7 +511,7 @@
     const qrText = 'Emphile Cleaning Solutions Ltd\n' +
       'Invoice: ' + shortRef + '\n' +
       'Customer: ' + (customer && customer.full_name ? customer.full_name : 'Customer') + '\n' +
-      'Amount: ' + fmtNaira(inv.amount) + '\n' +
+      'Amount: NGN ' + Number(inv.amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '\n' +
       'Status: ' + inv.status + '\n' +
       'Date: ' + fmtDate(inv.job_date);
 
@@ -569,8 +569,13 @@
       </div>
     `;
     try {
-      new QRCode(document.getElementById('invoiceQrBox'), { text: qrText, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
-    } catch (e) {}
+      const qrBox = document.getElementById('invoiceQrBox');
+      if (!qrBox) throw new Error('invoiceQrBox element not found in printArea');
+      if (typeof QRCode === 'undefined') throw new Error('QRCode library not loaded');
+      new QRCode(qrBox, { text: qrText, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
+    } catch (e) {
+      console.error('QR code generation failed:', e);
+    }
     window.print();
   }
 
