@@ -171,7 +171,7 @@
   async function setStaffStatus(isStaff) {
     const staffError = document.getElementById('staffError');
     staffError.style.display = 'none';
-    const email = document.getElementById('staffEmail').value.trim();
+    const email = document.getElementById('staffEmail').value.trim().toLowerCase();
     if (!email) return;
 
     const { data: found, error: lookupError } = await supabaseClient
