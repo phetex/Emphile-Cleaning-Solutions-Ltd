@@ -9,6 +9,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/portal.css">
+<style>
+  .btn-print {
+    background: #fff; color: var(--green-dk); border: 1px solid var(--border-bright);
+    padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap;
+  }
+  .btn-print:hover { border-color: var(--green); }
+  #printArea { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
+  }
+</style>
 </head>
 <body>
 <nav>
@@ -133,6 +147,9 @@
     <div id="invoicesContent"><div class="loading-state">Loading invoices…</div></div>
   </div>
 </div>
+
+<div id="printArea"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script>
@@ -165,7 +182,7 @@
   async function loadCustomers() {
     const { data: profiles } = await supabaseClient
       .from('profiles')
-      .select('id, full_name, email')
+      .select('id, full_name, email, phone')
       .order('full_name', { ascending: true });
 
     const noteCustomerSelect = document.getElementById('noteCustomerId');
@@ -384,10 +401,17 @@
     await loadInvoices();
   }
 
+  let invoicesById = {};
+
+  function fmtDateTime(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
   async function loadInvoices() {
     const { data: invoices, error } = await supabaseClient
       .from('invoices')
-      .select('id, customer_id, service_type, job_date, amount, status, notes, assigned_staff_id, job_status, clock_in_at, clock_out_at')
+      .select('id, customer_id, service_type, job_date, amount, status, notes, assigned_staff_id, job_status, clock_in_at, clock_out_at, paystack_reference, paid_at')
       .order('job_date', { ascending: false });
 
     if (error) {
@@ -398,6 +422,9 @@
       invoicesContent.innerHTML = '<div class="empty-state">No invoices yet. Add one above.</div>';
       return;
     }
+
+    invoicesById = {};
+    invoices.forEach((inv) => { invoicesById[inv.id] = inv; });
 
     const staffOptions = (selectedId) => '<option value="">Unassigned</option>' +
       staffProfiles.map((s) => '<option value="' + s.id + '" ' + (s.id === selectedId ? 'selected' : '') + '>' + (s.full_name || s.email) + '</option>').join('');
@@ -423,7 +450,10 @@
             <select class="form-input staff-select" data-id="${inv.id}">${staffOptions(inv.assigned_staff_id)}</select>
             <div style="font-size:11px;color:var(--faint);margin-top:4px;">${inv.job_status}</div>
           </td>
-          <td><button class="btn-delete" data-id="${inv.id}">Delete</button></td>
+          <td style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+            <button class="btn-print" data-print="${inv.id}">Print</button>
+            <button class="btn-delete" data-id="${inv.id}">Delete</button>
+          </td>
         </tr>
       `;
     }).join('');
@@ -464,6 +494,72 @@
         await loadInvoices();
       });
     });
+
+    invoicesContent.querySelectorAll('[data-print]').forEach((btn) => {
+      btn.addEventListener('click', () => printInvoice(btn.getAttribute('data-print')));
+    });
+  }
+
+  function printInvoice(invoiceId) {
+    const inv = invoicesById[invoiceId];
+    if (!inv) return;
+    const customer = profilesById[inv.customer_id];
+    const shortRef = 'INV-' + invoiceId.slice(0, 8).toUpperCase();
+    const printArea = document.getElementById('printArea');
+
+    printArea.innerHTML = `
+      <div style="font-family: Arial, sans-serif; color: #10241B; max-width: 640px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0B4630;padding-bottom:16px;margin-bottom:24px;">
+          <div>
+            <h1 style="font-size:22px;margin-bottom:4px;color:#0B4630;">Emphile Cleaning Solutions Ltd</h1>
+            <p style="font-size:12px;color:#55665D;">2, Mustapha Close, Cement, Dopemu, Lagos</p>
+            <p style="font-size:12px;color:#55665D;">RC 9765524 &middot; info@emphile.com &middot; 070 6709 8658</p>
+          </div>
+          <div style="text-align:right;">
+            <h2 style="font-size:18px;color:#10241B;">INVOICE</h2>
+            <p style="font-size:12px;color:#55665D;">${shortRef}</p>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
+          <tr><td style="padding:6px 0;font-weight:bold;width:160px;">Bill to</td><td>${customer && customer.full_name ? customer.full_name : 'Customer'}</td></tr>
+          <tr><td style="padding:6px 0;font-weight:bold;">Email</td><td>${customer && customer.email ? customer.email : '—'}</td></tr>
+          <tr><td style="padding:6px 0;font-weight:bold;">Phone</td><td>${customer && customer.phone ? customer.phone : '—'}</td></tr>
+        </table>
+
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
+          <thead>
+            <tr style="background:#E7F5EC;">
+              <th style="text-align:left;padding:10px;border:1px solid #ccc;">Service</th>
+              <th style="text-align:left;padding:10px;border:1px solid #ccc;">Job date</th>
+              <th style="text-align:right;padding:10px;border:1px solid #ccc;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:10px;border:1px solid #ccc;">${inv.service_type}${inv.notes ? '<br><span style=\'font-size:12px;color:#55665D;\'>' + inv.notes + '</span>' : ''}</td>
+              <td style="padding:10px;border:1px solid #ccc;">${fmtDate(inv.job_date)}</td>
+              <td style="padding:10px;border:1px solid #ccc;text-align:right;">${fmtNaira(inv.amount)}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="padding:10px;text-align:right;font-weight:bold;border:1px solid #ccc;">Total</td>
+              <td style="padding:10px;text-align:right;font-weight:bold;border:1px solid #ccc;">${fmtNaira(inv.amount)}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <tr><td style="padding:6px 0;font-weight:bold;width:160px;">Payment status</td><td>${inv.status}</td></tr>
+          ${inv.paid_at ? '<tr><td style="padding:6px 0;font-weight:bold;">Paid on</td><td>' + fmtDateTime(inv.paid_at) + '</td></tr>' : ''}
+          ${inv.paystack_reference ? '<tr><td style="padding:6px 0;font-weight:bold;">Payment reference</td><td>' + inv.paystack_reference + '</td></tr>' : ''}
+        </table>
+
+        <p style="font-size:12px;color:#55665D;margin-top:40px;border-top:1px solid #ccc;padding-top:16px;">Thank you for choosing Emphile Cleaning Solutions Ltd.</p>
+      </div>
+    `;
+    window.print();
   }
 
   invoiceForm.addEventListener('submit', async (e) => {
