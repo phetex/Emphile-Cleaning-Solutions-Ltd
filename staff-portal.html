@@ -9,6 +9,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/portal.css">
+<style>
+  .doc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .doc-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .doc-status { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .doc-controls { display: flex; align-items: center; gap: 8px; }
+  .doc-controls input[type="file"] { font-size: 12px; max-width: 160px; }
+  .btn-view { font-size: 12px; color: var(--green-dk); font-weight: 600; text-decoration: none; }
+  .btn-print {
+    background: #fff; color: var(--green-dk); border: 1px solid var(--border-bright);
+    padding: 8px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .btn-print:hover { border-color: var(--green); }
+  #printArea { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
+  }
+</style>
 </head>
 <body>
 <nav>
@@ -32,6 +52,9 @@
     <div class="loading-state">Loading your assigned jobs…</div>
   </div>
 </div>
+
+<div id="printArea"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script>
@@ -39,6 +62,8 @@
   const welcomeSub = document.getElementById('welcomeSub');
   const content = document.getElementById('content');
   const logoutBtn = document.getElementById('logoutBtn');
+  let staffName = '';
+  let jobsById = {};
 
   function fmtNaira(n) {
     return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -50,6 +75,10 @@
   function fmtTime(d) {
     if (!d) return '—';
     return new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+  function fmtDateTime(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   logoutBtn.addEventListener('click', async () => {
@@ -76,7 +105,8 @@
       return;
     }
 
-    welcomeTitle.textContent = 'Welcome, ' + (profile.full_name || user.email);
+    staffName = profile.full_name || user.email;
+    welcomeTitle.textContent = 'Welcome, ' + staffName;
     welcomeSub.textContent = 'Here are the jobs assigned to you.';
 
     await loadJobs();
@@ -88,7 +118,7 @@
 
     const { data: jobs, error } = await supabaseClient
       .from('invoices')
-      .select('id, customer_id, service_type, job_date, notes, job_status, clock_in_at, clock_out_at')
+      .select('id, customer_id, service_type, job_date, notes, job_status, clock_in_at, clock_out_at, completion_form_path, checklist_path, completion_form_uploaded_at, checklist_uploaded_at')
       .eq('assigned_staff_id', user.id)
       .order('job_date', { ascending: true });
 
@@ -110,6 +140,9 @@
     const profilesById = {};
     (profiles || []).forEach((p) => { profilesById[p.id] = p; });
 
+    jobsById = {};
+    jobs.forEach((j) => { jobsById[j.id] = { ...j, customer: profilesById[j.customer_id] }; });
+
     const cards = jobs.map((job) => {
       const customer = profilesById[job.customer_id];
       const customerName = customer && customer.full_name ? customer.full_name : 'Customer';
@@ -124,6 +157,9 @@
       } else {
         actionHtml = '<button class="btn-pay" data-action="clockin" data-id="' + job.id + '">Clock In &amp; Start Job</button>';
       }
+
+      const completionRow = docRow(job.id, 'completion', 'Job completion form', job.completion_form_path, job.completion_form_uploaded_at);
+      const checklistRow = docRow(job.id, 'checklist', 'Checklist', job.checklist_path, job.checklist_uploaded_at);
 
       return `
         <div class="job-card">
@@ -141,7 +177,14 @@
             <span>Clocked out: ${fmtTime(job.clock_out_at)}</span>
           </div>
           ${job.notes ? '<div class="job-notes">' + job.notes + '</div>' : ''}
-          <div class="job-actions">${actionHtml}</div>
+          <div class="job-actions" style="justify-content:space-between;">
+            <button type="button" class="btn-print" data-print="${job.id}">Print job sheet</button>
+            ${actionHtml}
+          </div>
+          <div class="doc-list">
+            ${completionRow}
+            ${checklistRow}
+          </div>
         </div>
       `;
     }).join('');
@@ -171,6 +214,98 @@
         await loadJobs();
       });
     });
+
+    content.querySelectorAll('[data-print]').forEach((btn) => {
+      btn.addEventListener('click', () => printJobSheet(btn.getAttribute('data-print')));
+    });
+
+    content.querySelectorAll('[data-upload-btn]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const jobId = btn.getAttribute('data-upload-btn');
+        const docType = btn.getAttribute('data-doc-type');
+        const fileInput = content.querySelector('[data-file-input="' + jobId + '-' + docType + '"]');
+        if (fileInput.files.length > 0) uploadDocument(jobId, docType, fileInput.files[0], btn);
+      });
+    });
+
+    content.querySelectorAll('[data-view]').forEach((link) => {
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const path = link.getAttribute('data-view');
+        const { data, error } = await supabaseClient.storage.from('job-documents').createSignedUrl(path, 3600);
+        if (data && data.signedUrl) window.open(data.signedUrl, '_blank');
+      });
+    });
+  }
+
+  function docRow(jobId, docType, label, path, uploadedAt) {
+    const uploaded = !!path;
+    const statusText = uploaded ? ('Uploaded ' + fmtDateTime(uploadedAt)) : 'Not uploaded yet';
+    const viewLink = uploaded ? '<a href="#" class="btn-view" data-view="' + path + '">View</a>' : '';
+    return `
+      <div class="doc-row">
+        <div>
+          <div class="doc-label">${label}</div>
+          <div class="doc-status">${statusText}</div>
+        </div>
+        <div class="doc-controls">
+          ${viewLink}
+          <input type="file" accept="image/*,.pdf" data-file-input="${jobId}-${docType}">
+          <button type="button" class="btn-print" data-upload-btn="${jobId}" data-doc-type="${docType}">Upload</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function uploadDocument(jobId, docType, file, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Uploading…';
+
+    const path = jobId + '/' + docType + '-' + Date.now() + '-' + file.name;
+    const { error: uploadError } = await supabaseClient.storage.from('job-documents').upload(path, file);
+
+    if (uploadError) {
+      alert('Upload failed: ' + uploadError.message);
+      btn.disabled = false;
+      btn.textContent = 'Upload';
+      return;
+    }
+
+    const columnPath = docType === 'completion' ? 'completion_form_path' : 'checklist_path';
+    const columnTime = docType === 'completion' ? 'completion_form_uploaded_at' : 'checklist_uploaded_at';
+    await supabaseClient.from('invoices').update({
+      [columnPath]: path,
+      [columnTime]: new Date().toISOString(),
+    }).eq('id', jobId);
+
+    await loadJobs();
+  }
+
+  function printJobSheet(jobId) {
+    const job = jobsById[jobId];
+    if (!job) return;
+    const customer = job.customer;
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = `
+      <div style="font-family: Arial, sans-serif; color: #10241B; max-width: 600px;">
+        <h1 style="font-size:22px;margin-bottom:4px;">Emphile Cleaning Solutions Ltd</h1>
+        <p style="font-size:13px;color:#55665D;margin-bottom:20px;">Job Sheet</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <tr><td style="padding:8px 0;font-weight:bold;width:160px;">Service</td><td>${job.service_type}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;">Job date</td><td>${fmtDate(job.job_date)}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;">Customer</td><td>${customer && customer.full_name ? customer.full_name : 'Customer'}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;">Phone</td><td>${customer && customer.phone ? customer.phone : '—'}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;">Address</td><td>${customer && customer.address ? customer.address : 'No address on file'}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;">Assigned to</td><td>${staffName}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;">Notes</td><td>${job.notes || '—'}</td></tr>
+        </table>
+        <div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;">
+          <p style="font-size:13px;margin-bottom:24px;">Staff signature: ______________________________</p>
+          <p style="font-size:13px;">Customer signature: ______________________________</p>
+        </div>
+      </div>
+    `;
+    window.print();
   }
 </script>
 </body>
