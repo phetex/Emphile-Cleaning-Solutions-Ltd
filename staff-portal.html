@@ -57,6 +57,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
   const welcomeTitle = document.getElementById('welcomeTitle');
   const welcomeSub = document.getElementById('welcomeSub');
@@ -281,15 +282,28 @@
     await loadJobs();
   }
 
-  function printJobSheet(jobId) {
+  async function printJobSheet(jobId) {
     const job = jobsById[jobId];
     if (!job) return;
     const customer = job.customer;
     const printArea = document.getElementById('printArea');
+    const shortRef = 'JOB-' + jobId.slice(0, 8).toUpperCase();
+
+    const qrText = 'Emphile Cleaning Solutions Ltd\n' +
+      'Job: ' + shortRef + '\n' +
+      'Service: ' + job.service_type + '\n' +
+      'Customer: ' + (customer && customer.full_name ? customer.full_name : 'Customer') + '\n' +
+      'Date: ' + fmtDate(job.job_date) + '\n' +
+      'Staff: ' + staffName;
     printArea.innerHTML = `
       <div style="font-family: Arial, sans-serif; color: #10241B; max-width: 600px;">
-        <h1 style="font-size:22px;margin-bottom:4px;">Emphile Cleaning Solutions Ltd</h1>
-        <p style="font-size:13px;color:#55665D;margin-bottom:20px;">Job Sheet</p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+          <div>
+            <h1 style="font-size:22px;margin-bottom:4px;">Emphile Cleaning Solutions Ltd</h1>
+            <p style="font-size:13px;color:#55665D;">Job Sheet &middot; ${shortRef}</p>
+          </div>
+          <div id="jobQrBox" style="display:inline-block;"></div>
+        </div>
         <table style="width:100%;border-collapse:collapse;font-size:14px;">
           <tr><td style="padding:8px 0;font-weight:bold;width:160px;">Service</td><td>${job.service_type}</td></tr>
           <tr><td style="padding:8px 0;font-weight:bold;">Job date</td><td>${fmtDate(job.job_date)}</td></tr>
@@ -305,6 +319,9 @@
         </div>
       </div>
     `;
+    try {
+      new QRCode(document.getElementById('jobQrBox'), { text: qrText, width: 80, height: 80, correctLevel: QRCode.CorrectLevel.M });
+    } catch (e) {}
     window.print();
   }
 </script>
