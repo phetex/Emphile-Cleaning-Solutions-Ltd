@@ -153,6 +153,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script>
   const welcomeTitle = document.getElementById('welcomeTitle');
   const welcomeSub = document.getElementById('welcomeSub');
@@ -565,7 +566,11 @@
           ${inv.paystack_reference ? '<tr><td style="padding:6px 0;font-weight:bold;">Payment reference</td><td>' + inv.paystack_reference + '</td></tr>' : ''}
         </table>
 
-        <p style="font-size:12px;color:#55665D;margin-top:40px;border-top:1px solid #ccc;padding-top:16px;">Thank you for choosing Emphile Cleaning Solutions Ltd.</p>
+        <div style="margin-top:32px;border-top:1px solid #ccc;padding-top:16px;text-align:center;">
+          <svg id="invoiceBarcode"></svg>
+        </div>
+
+        <p style="font-size:12px;color:#55665D;margin-top:16px;text-align:center;">Thank you for choosing Emphile Cleaning Solutions Ltd.</p>
       </div>
     `;
     try {
@@ -575,6 +580,12 @@
       new QRCode(qrBox, { text: qrText, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
     } catch (e) {
       console.error('QR code generation failed:', e);
+    }
+    try {
+      if (typeof JsBarcode === 'undefined') throw new Error('JsBarcode library not loaded');
+      JsBarcode('#invoiceBarcode', shortRef, { format: 'CODE128', width: 2, height: 40, displayValue: true, fontSize: 13, margin: 0 });
+    } catch (e) {
+      console.error('Barcode generation failed:', e);
     }
     window.print();
   }

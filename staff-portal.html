@@ -58,6 +58,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script>
   const welcomeTitle = document.getElementById('welcomeTitle');
   const welcomeSub = document.getElementById('welcomeSub');
@@ -317,11 +318,23 @@
           <p style="font-size:13px;margin-bottom:24px;">Staff signature: ______________________________</p>
           <p style="font-size:13px;">Customer signature: ______________________________</p>
         </div>
+        <div style="margin-top:24px;border-top:1px solid #ccc;padding-top:16px;text-align:center;">
+          <svg id="jobBarcode"></svg>
+        </div>
       </div>
     `;
     try {
+      if (typeof QRCode === 'undefined') throw new Error('QRCode library not loaded');
       new QRCode(document.getElementById('jobQrBox'), { text: qrText, width: 80, height: 80, correctLevel: QRCode.CorrectLevel.M });
-    } catch (e) {}
+    } catch (e) {
+      console.error('QR code generation failed:', e);
+    }
+    try {
+      if (typeof JsBarcode === 'undefined') throw new Error('JsBarcode library not loaded');
+      JsBarcode('#jobBarcode', shortRef, { format: 'CODE128', width: 2, height: 40, displayValue: true, fontSize: 13, margin: 0 });
+    } catch (e) {
+      console.error('Barcode generation failed:', e);
+    }
     window.print();
   }
 </script>
