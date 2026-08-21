@@ -247,13 +247,23 @@
     padding: 32px 28px; transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
   }
   .service-card:hover { box-shadow: 0 16px 40px rgba(11,70,48,0.10); transform: translateY(-3px); border-color: var(--border-bright); }
-  .service-icon {
-    width: 50px; height: 50px; border-radius: 12px;
-    background: var(--mint); display: flex; align-items: center; justify-content: center;
-    font-size: 22px; margin-bottom: 20px;
+  .service-toggle {
+    display: flex; align-items: center; gap: 16px; width: 100%;
+    background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit;
+    text-align: left; cursor: pointer;
   }
-  .service-name { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; margin-bottom: 8px; color: var(--ink); }
-  .service-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+  .service-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 6px; border-radius: 8px; }
+  .service-icon {
+    width: 50px; height: 50px; border-radius: 12px; flex-shrink: 0;
+    background: var(--mint); display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .service-name { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--ink); flex: 1; }
+  .service-chevron { flex-shrink: 0; color: var(--muted); transition: transform 0.3s ease, color 0.3s ease; }
+  .service-card.open .service-chevron { transform: rotate(180deg); color: var(--green); }
+  .service-desc-wrap { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+  .service-card.open .service-desc-wrap { max-height: 220px; }
+  .service-desc { font-size: 14px; color: var(--muted); line-height: 1.7; padding-top: 16px; }
 
   /* about */
   .about-section {
@@ -467,49 +477,76 @@
   <p class="section-sub reveal">A full range of cleaning and facility support solutions for corporate, residential, and specialized environments.</p>
   <div class="services-grid">
     <div class="service-card reveal">
-      <div class="service-icon">🏢</div>
-      <div class="service-name">Commercial &amp; Office Cleaning</div>
-      <p class="service-desc">Daily, weekly, and monthly schedules covering general office sanitation, restroom hygiene, and waste coordination.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🏢</div>
+        <div class="service-name">Commercial &amp; Office Cleaning</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Daily, weekly, and monthly schedules covering general office sanitation, restroom hygiene, and waste coordination.</p></div>
     </div>
     <div class="service-card reveal reveal-delay-1">
-      <div class="service-icon">🍃</div>
-      <div class="service-name">Green Cleaning Solutions</div>
-      <p class="service-desc">Eco-friendly, low-toxicity products and sustainable methods that protect health and reduce environmental impact.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🍃</div>
+        <div class="service-name">Green Cleaning Solutions</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Eco-friendly, low-toxicity products and sustainable methods that protect health and reduce environmental impact.</p></div>
     </div>
     <div class="service-card reveal reveal-delay-2">
-      <div class="service-icon">🏠</div>
-      <div class="service-name">Residential Cleaning</div>
-      <p class="service-desc">Routine housekeeping, deep cleaning, and move-in/move-out cleaning for homes and private residences.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🏠</div>
+        <div class="service-name">Residential Cleaning</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Routine housekeeping, deep cleaning, and move-in/move-out cleaning for homes and private residences.</p></div>
     </div>
     <div class="service-card reveal reveal-delay-1">
-      <div class="service-icon">🛋️</div>
-      <div class="service-name">Carpet &amp; Upholstery Cleaning</div>
-      <p class="service-desc">Hot water extraction, stain treatment, odor control, and fabric sanitization for carpets and furniture.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🛋️</div>
+        <div class="service-name">Carpet &amp; Upholstery Cleaning</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Hot water extraction, stain treatment, odor control, and fabric sanitization for carpets and furniture.</p></div>
     </div>
     <div class="service-card reveal reveal-delay-2">
-      <div class="service-icon">🧽</div>
-      <div class="service-name">Floor Care Services</div>
-      <p class="service-desc">Scrubbing, polishing, sealing, and surface protection for tile, marble, terrazzo, and vinyl floors.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🧽</div>
+        <div class="service-name">Floor Care Services</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Scrubbing, polishing, sealing, and surface protection for tile, marble, terrazzo, and vinyl floors.</p></div>
     </div>
     <div class="service-card reveal reveal-delay-3">
-      <div class="service-icon">🪟</div>
-      <div class="service-name">Window Cleaning</div>
-      <p class="service-desc">Internal and external glass cleaning, including high-reach and façade cleaning where applicable.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🪟</div>
+        <div class="service-name">Window Cleaning</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Internal and external glass cleaning, including high-reach and façade cleaning where applicable.</p></div>
     </div>
     <div class="service-card reveal">
-      <div class="service-icon">🏗️</div>
-      <div class="service-name">Post-Construction Cleaning</div>
-      <p class="service-desc">Debris and dust removal, paint and residue cleaning, and final handover preparation.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🏗️</div>
+        <div class="service-name">Post-Construction Cleaning</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Debris and dust removal, paint and residue cleaning, and final handover preparation.</p></div>
     </div>
     <div class="service-card reveal reveal-delay-1">
-      <div class="service-icon">♻️</div>
-      <div class="service-name">Waste Management Support</div>
-      <p class="service-desc">On-site waste segregation guidance, ethical disposal coordination, and recycling support.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">♻️</div>
+        <div class="service-name">Waste Management Support</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">On-site waste segregation guidance, ethical disposal coordination, and recycling support.</p></div>
     </div>
     <div class="service-card reveal reveal-delay-2">
-      <div class="service-icon">🐜</div>
-      <div class="service-name">Pest Control &amp; Specialized Cleaning</div>
-      <p class="service-desc">Environmentally safe pest management, plus tailored cleaning for schools, hospitality, and healthcare settings.</p>
+      <button class="service-toggle" type="button" aria-expanded="false">
+        <div class="service-icon">🐜</div>
+        <div class="service-name">Pest Control &amp; Specialized Cleaning</div>
+        <svg class="service-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="service-desc-wrap"><p class="service-desc">Environmentally safe pest management, plus tailored cleaning for schools, hospitality, and healthcare settings.</p></div>
     </div>
   </div>
 </section>
@@ -740,6 +777,14 @@
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
   }, { threshold: 0.12 });
   reveals.forEach(el => obs.observe(el));
+
+  document.querySelectorAll('.service-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.service-card');
+      const isOpen = card.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+  });
 
   const SUPABASE_URL = 'https://izjsoqcpzqxbmluzsepu.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_IlWbqiVDMdfAL1hOnPGr8g_-7PkHpuv';
