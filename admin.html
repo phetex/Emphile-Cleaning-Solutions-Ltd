@@ -146,6 +146,12 @@
     <h2>All invoices / jobs</h2>
     <div id="invoicesContent"><div class="loading-state">Loading invoices…</div></div>
   </div>
+
+  <div class="admin-section">
+    <h2>Quality inspections</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;">Checklists staff have submitted for review. Approve them, or send them back for rework with notes.</p>
+    <div id="inspectionsContent"><div class="loading-state">Loading checklists…</div></div>
+  </div>
 </div>
 
 <div id="printArea"></div>
@@ -502,6 +508,139 @@
     });
   }
 
+  function checklistStatusMeta(status) {
+    switch (status) {
+      case 'submitted': return { label: 'Awaiting review', cls: 'status-Submitted' };
+      case 'approved': return { label: 'Approved', cls: 'status-Paid' };
+      case 'rejected': return { label: 'Needs rework', cls: 'status-Overdue' };
+      default: return { label: 'In progress', cls: 'status-Pending' };
+    }
+  }
+
+  function groupChecklistItems(items) {
+    const categories = [];
+    const byCat = {};
+    (items || []).forEach((it) => {
+      if (!byCat[it.category]) { byCat[it.category] = []; categories.push(it.category); }
+      byCat[it.category].push(it);
+    });
+    return categories.map((cat) => `
+      <div class="checklist-category">
+        <div class="checklist-category-title">${cat}</div>
+        ${byCat[cat].map((it) => `
+          <div class="checklist-item">
+            <span style="color:${it.checked ? 'var(--green)' : 'var(--faint)'};">${it.checked ? '✓' : '○'}</span>
+            <span>${it.label}</span>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  async function loadInspections() {
+    const inspectionsContent = document.getElementById('inspectionsContent');
+    const { data: checklists, error } = await supabaseClient
+      .from('job_checklists')
+      .select('*')
+      .in('status', ['submitted', 'approved', 'rejected'])
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      inspectionsContent.innerHTML = '<div class="empty-state">Couldn\'t load checklists right now.</div>';
+      return;
+    }
+    if (!checklists || checklists.length === 0) {
+      inspectionsContent.innerHTML = '<div class="empty-state">No checklists submitted for inspection yet.</div>';
+      return;
+    }
+
+    const cards = checklists.map((c) => {
+      const inv = invoicesById[c.invoice_id];
+      const customer = inv ? profilesById[inv.customer_id] : null;
+      const staff = staffProfiles.find((s) => s.id === c.staff_id);
+      const meta = checklistStatusMeta(c.status);
+      const total = (c.items || []).length;
+      const checkedCount = (c.items || []).filter((i) => i.checked).length;
+      const editable = c.status === 'submitted';
+
+      return `
+        <div class="job-card" style="margin-bottom:16px;">
+          <div class="job-card-header">
+            <div>
+              <div class="job-service">${inv ? inv.service_type : 'Job'}</div>
+              <div class="job-customer">${customer ? (customer.full_name || customer.email) : 'Customer'}</div>
+              <div class="job-address">Staff: ${staff ? (staff.full_name || staff.email) : '—'}</div>
+            </div>
+            <span class="status-pill ${meta.cls}">${meta.label}</span>
+          </div>
+          <div class="job-meta">
+            <span>Job date: ${inv ? fmtDate(inv.job_date) : '—'}</span>
+            <span>Submitted: ${fmtDateTime(c.submitted_at)}</span>
+            <span>${checkedCount}/${total} tasks completed</span>
+          </div>
+          ${groupChecklistItems(c.items)}
+          ${c.staff_notes ? '<div class="job-notes"><strong>Staff notes:</strong> ' + c.staff_notes + '</div>' : ''}
+          ${!editable && c.inspection_notes ? '<div class="job-notes"><strong>Inspection notes:</strong> ' + c.inspection_notes + '</div>' : ''}
+          ${editable ? `
+            <div class="admin-form-grid" style="margin-top:16px;">
+              <div class="form-group">
+                <label class="form-label">RESULT</label>
+                <select class="form-input inspection-result" data-id="${c.id}">
+                  <option value="pass">Pass</option>
+                  <option value="pass_with_notes">Pass with notes</option>
+                  <option value="fail">Fail — needs rework</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">INSPECTION NOTES</label>
+                <textarea class="form-textarea inspection-notes" data-id="${c.id}" placeholder="Feedback for staff (required if failing)"></textarea>
+              </div>
+            </div>
+            <button type="button" class="btn-pay" data-inspect="${c.id}" style="margin-top:12px;">Save inspection</button>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    inspectionsContent.innerHTML = cards;
+
+    inspectionsContent.querySelectorAll('[data-inspect]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-inspect');
+        const resultSel = inspectionsContent.querySelector('.inspection-result[data-id="' + id + '"]');
+        const notesEl = inspectionsContent.querySelector('.inspection-notes[data-id="' + id + '"]');
+        const result = resultSel.value;
+        const notes = notesEl.value.trim();
+
+        if (result === 'fail' && !notes) {
+          alert('Please add inspection notes explaining what needs rework.');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const { error: inspectError } = await supabaseClient.from('job_checklists').update({
+          status: result === 'fail' ? 'rejected' : 'approved',
+          inspection_result: result,
+          inspection_notes: notes,
+          inspected_by: session.user.id,
+          inspected_at: new Date().toISOString(),
+        }).eq('id', id);
+
+        if (inspectError) {
+          alert('Could not save inspection: ' + inspectError.message);
+          btn.disabled = false;
+          btn.textContent = 'Save inspection';
+          return;
+        }
+
+        await loadInspections();
+      });
+    });
+  }
+
   async function printInvoice(invoiceId) {
     const inv = invoicesById[invoiceId];
     if (!inv) return;
@@ -648,6 +787,7 @@
     await loadStaffList();
     await loadInvoices();
     await loadFollowups();
+    await loadInspections();
   })();
 </script>
 </body>

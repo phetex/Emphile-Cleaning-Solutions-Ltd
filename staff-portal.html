@@ -66,6 +66,48 @@
   const logoutBtn = document.getElementById('logoutBtn');
   let staffName = '';
   let jobsById = {};
+  let checklistsByJob = {};
+  const openChecklistIds = new Set();
+
+  const CHECKLIST_TEMPLATE = [
+    { category: 'Pre-Service Preparation', tasks: [
+      'Reviewed job scope and customer instructions',
+      'Gathered required equipment, materials, and PPE',
+      'Assessed site conditions and identified hazards',
+    ]},
+    { category: 'Cleaning Tasks', tasks: [
+      'Dusted and wiped all surfaces',
+      'Vacuumed and/or swept all floors',
+      'Mopped and treated hard floor surfaces',
+      'Sanitized and restocked restrooms',
+      'Cleaned kitchen / break area (if applicable)',
+      'Cleaned windows and glass surfaces (if applicable)',
+      'Emptied trash and relined bins',
+    ]},
+    { category: 'Quality & Handover', tasks: [
+      'Completed final walkthrough of all areas',
+      'Confirmed no damage or issues to report',
+      'Packed away equipment and left site tidy',
+      'Notified customer/site contact of completion',
+    ]},
+  ];
+
+  function buildDefaultChecklistItems() {
+    const items = [];
+    CHECKLIST_TEMPLATE.forEach((group) => {
+      group.tasks.forEach((task) => items.push({ category: group.category, label: task, checked: false }));
+    });
+    return items;
+  }
+
+  function checklistStatusMeta(status) {
+    switch (status) {
+      case 'submitted': return { label: 'Awaiting inspection', cls: 'status-Submitted' };
+      case 'approved': return { label: 'Approved', cls: 'status-Paid' };
+      case 'rejected': return { label: 'Needs rework', cls: 'status-Overdue' };
+      default: return { label: 'In progress', cls: 'status-Pending' };
+    }
+  }
 
   function fmtNaira(n) {
     return '₦' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -145,6 +187,22 @@
     jobsById = {};
     jobs.forEach((j) => { jobsById[j.id] = { ...j, customer: profilesById[j.customer_id] }; });
 
+    const jobIds = jobs.map((j) => j.id);
+    const { data: checklists } = await supabaseClient
+      .from('job_checklists')
+      .select('*')
+      .in('invoice_id', jobIds);
+    checklistsByJob = {};
+    (checklists || []).forEach((c) => { checklistsByJob[c.invoice_id] = c; });
+    jobs.forEach((j) => {
+      if (!checklistsByJob[j.id]) {
+        checklistsByJob[j.id] = {
+          invoice_id: j.id, status: 'in_progress', items: buildDefaultChecklistItems(),
+          staff_notes: '', submitted_at: null, inspection_result: null, inspection_notes: null,
+        };
+      }
+    });
+
     const cards = jobs.map((job) => {
       const customer = profilesById[job.customer_id];
       const customerName = customer && customer.full_name ? customer.full_name : 'Customer';
@@ -187,6 +245,7 @@
             ${completionRow}
             ${checklistRow}
           </div>
+          ${renderChecklistPanel(job.id)}
         </div>
       `;
     }).join('');
@@ -238,6 +297,148 @@
         if (data && data.signedUrl) window.open(data.signedUrl, '_blank');
       });
     });
+
+    content.querySelectorAll('[data-checklist-toggle]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-checklist-toggle');
+        const block = btn.closest('.checklist-block');
+        if (openChecklistIds.has(id)) { openChecklistIds.delete(id); block.classList.remove('open'); }
+        else { openChecklistIds.add(id); block.classList.add('open'); }
+      });
+    });
+
+    content.querySelectorAll('[data-checklist-item]').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const jobId = cb.getAttribute('data-checklist-item');
+        const idx = Number(cb.getAttribute('data-idx'));
+        checklistsByJob[jobId].items[idx].checked = cb.checked;
+        const progressEl = content.querySelector('[data-checklist-progress="' + jobId + '"]');
+        if (progressEl) {
+          const state = checklistsByJob[jobId];
+          const checkedCount = state.items.filter((i) => i.checked).length;
+          progressEl.textContent = checkedCount + '/' + state.items.length + ' tasks completed';
+        }
+      });
+    });
+
+    content.querySelectorAll('[data-save-checklist]').forEach((btn) => {
+      btn.addEventListener('click', () => saveChecklist(btn.getAttribute('data-save-checklist'), { submit: false }));
+    });
+
+    content.querySelectorAll('[data-submit-checklist]').forEach((btn) => {
+      btn.addEventListener('click', () => saveChecklist(btn.getAttribute('data-submit-checklist'), { submit: true }));
+    });
+  }
+
+  function renderChecklistItems(jobId, items, editable) {
+    const categories = [];
+    const byCat = {};
+    items.forEach((it, idx) => {
+      if (!byCat[it.category]) { byCat[it.category] = []; categories.push(it.category); }
+      byCat[it.category].push({ ...it, idx });
+    });
+    return categories.map((cat) => `
+      <div class="checklist-category">
+        <div class="checklist-category-title">${cat}</div>
+        ${byCat[cat].map((it) => `
+          <label class="checklist-item">
+            <input type="checkbox" data-checklist-item="${jobId}" data-idx="${it.idx}" ${it.checked ? 'checked' : ''} ${editable ? '' : 'disabled'}>
+            <span>${it.label}</span>
+          </label>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  function renderChecklistPanel(jobId) {
+    const state = checklistsByJob[jobId];
+    const total = state.items.length;
+    const checkedCount = state.items.filter((i) => i.checked).length;
+    const meta = checklistStatusMeta(state.status);
+    const editable = state.status === 'in_progress' || state.status === 'rejected';
+    const isOpen = openChecklistIds.has(jobId);
+
+    let noticeHtml = '';
+    if (state.status === 'rejected') {
+      noticeHtml = '<div class="checklist-notice rework"><strong>Needs rework:</strong> ' + (state.inspection_notes || 'The admin sent this back for corrections.') + '</div>';
+    } else if (state.status === 'approved') {
+      noticeHtml = '<div class="checklist-notice approved"><strong>Approved' + (state.inspection_result === 'pass_with_notes' ? ' with notes' : '') + '.</strong>' + (state.inspection_notes ? ' ' + state.inspection_notes : '') + '</div>';
+    } else if (state.status === 'submitted') {
+      noticeHtml = '<div class="checklist-notice pending">Submitted for inspection — awaiting admin review.</div>';
+    }
+
+    const actionsHtml = editable ? `
+      <div class="checklist-actions">
+        <button type="button" class="btn-print" data-save-checklist="${jobId}">Save progress</button>
+        <button type="button" class="btn-pay" data-submit-checklist="${jobId}">Submit for inspection</button>
+      </div>` : '';
+
+    return `
+      <div class="checklist-block${isOpen ? ' open' : ''}">
+        <button type="button" class="checklist-toggle" data-checklist-toggle="${jobId}">
+          <div>
+            <div class="checklist-toggle-title">Quality Checklist</div>
+            <div class="checklist-toggle-sub"><span data-checklist-progress="${jobId}">${checkedCount}/${total} tasks completed</span> &middot; <span class="status-pill ${meta.cls}">${meta.label}</span></div>
+          </div>
+          <svg class="chk-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="checklist-body">
+          ${renderChecklistItems(jobId, state.items, editable)}
+          <div class="form-group" style="margin-top:16px;">
+            <label class="form-label">NOTES (OPTIONAL)</label>
+            <textarea class="form-textarea" data-checklist-notes="${jobId}" ${editable ? '' : 'readonly'}>${state.staff_notes || ''}</textarea>
+          </div>
+          ${noticeHtml}
+          ${actionsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  async function saveChecklist(jobId, opts) {
+    const submit = !!(opts && opts.submit);
+    const state = checklistsByJob[jobId];
+    const notesEl = content.querySelector('[data-checklist-notes="' + jobId + '"]');
+    const notes = notesEl ? notesEl.value.trim() : (state.staff_notes || '');
+    const total = state.items.length;
+    const checkedCount = state.items.filter((i) => i.checked).length;
+
+    if (submit && checkedCount < total) {
+      const proceed = confirm((total - checkedCount) + ' task(s) are still unchecked. Submit for inspection anyway?');
+      if (!proceed) return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    const payload = {
+      invoice_id: jobId,
+      staff_id: session.user.id,
+      items: state.items,
+      staff_notes: notes,
+      status: submit ? 'submitted' : (state.status || 'in_progress'),
+    };
+    if (submit) {
+      payload.submitted_at = new Date().toISOString();
+      payload.inspected_by = null;
+      payload.inspected_at = null;
+      payload.inspection_result = null;
+      payload.inspection_notes = null;
+    }
+
+    const { data, error } = await supabaseClient
+      .from('job_checklists')
+      .upsert(payload, { onConflict: 'invoice_id' })
+      .select()
+      .single();
+
+    if (error) {
+      alert('Could not save checklist: ' + error.message);
+      return;
+    }
+
+    checklistsByJob[jobId] = data;
+    openChecklistIds.add(jobId);
+    await loadJobs();
   }
 
   function docRow(jobId, docType, label, path, uploadedAt) {
