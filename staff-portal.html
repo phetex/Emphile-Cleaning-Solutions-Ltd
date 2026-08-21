@@ -484,6 +484,42 @@
     await loadJobs();
   }
 
+  function buildPrintChecklistHtml(jobId) {
+    const state = checklistsByJob[jobId];
+    if (!state || !state.items || state.items.length === 0) return '';
+
+    const categories = [];
+    const byCat = {};
+    state.items.forEach((it) => {
+      if (!byCat[it.category]) { byCat[it.category] = []; categories.push(it.category); }
+      byCat[it.category].push(it);
+    });
+    const checkedCount = state.items.filter((i) => i.checked).length;
+    const meta = checklistStatusMeta(state.status);
+
+    const categoriesHtml = categories.map((cat) => `
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;color:#0E7C4C;margin-bottom:4px;">${cat}</div>
+        ${byCat[cat].map((it) => `<div style="font-size:13px;padding:2px 0;">${it.checked ? '&#9745;' : '&#9744;'} ${it.label}</div>`).join('')}
+      </div>
+    `).join('');
+
+    const staffNotesHtml = state.staff_notes
+      ? `<p style="font-size:13px;margin-top:10px;"><strong>Staff notes:</strong> ${state.staff_notes}</p>` : '';
+    const inspectionHtml = (state.status === 'approved' || state.status === 'rejected') && state.inspection_notes
+      ? `<p style="font-size:13px;margin-top:10px;"><strong>Inspection notes:</strong> ${state.inspection_notes}</p>` : '';
+
+    return `
+      <div style="margin-top:24px;border-top:1px solid #ccc;padding-top:16px;">
+        <h2 style="font-size:15px;margin-bottom:4px;">Quality Checklist</h2>
+        <p style="font-size:12px;color:#55665D;margin-bottom:12px;">${checkedCount}/${state.items.length} tasks completed &middot; Status: ${meta.label}</p>
+        ${categoriesHtml}
+        ${staffNotesHtml}
+        ${inspectionHtml}
+      </div>
+    `;
+  }
+
   async function printJobSheet(jobId) {
     const job = jobsById[jobId];
     if (!job) return;
@@ -515,7 +551,8 @@
           <tr><td style="padding:8px 0;font-weight:bold;">Assigned to</td><td>${staffName}</td></tr>
           <tr><td style="padding:8px 0;font-weight:bold;">Notes</td><td>${job.notes || '—'}</td></tr>
         </table>
-        <div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;">
+        ${buildPrintChecklistHtml(jobId)}
+        <div style="margin-top:24px;border-top:1px solid #ccc;padding-top:16px;">
           <p style="font-size:13px;margin-bottom:24px;">Staff signature: ______________________________</p>
           <p style="font-size:13px;">Customer signature: ______________________________</p>
         </div>
