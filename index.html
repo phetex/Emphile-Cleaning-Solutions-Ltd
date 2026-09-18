@@ -855,5 +855,503 @@
     });
   });
 </script>
+
+<!-- Virtual assistant -->
+<style>
+  .ea-launcher {
+    position: fixed; right: 24px; bottom: 90px; z-index: 210;
+    width: 58px; height: 58px; border: none; border-radius: 50%; cursor: pointer;
+    color: #fff; background: linear-gradient(135deg, #12996A, #0B4630);
+    box-shadow: 0 8px 24px rgba(11,70,48,0.35);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .ea-launcher:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(11,70,48,0.4); }
+  .ea-launcher svg { width: 26px; height: 26px; }
+  .ea-launcher .ea-ic-close { display: none; }
+  .ea-launcher[aria-expanded="true"] .ea-ic-chat { display: none; }
+  .ea-launcher[aria-expanded="true"] .ea-ic-close { display: block; }
+  .ea-launcher:focus-visible, .ea-close:focus-visible, .ea-chip:focus-visible,
+  .ea-link:focus-visible, .ea-send:focus-visible, .ea-nudge-x:focus-visible { outline: 2px solid #0E7C4C; outline-offset: 2px; }
+
+  .ea-nudge {
+    position: fixed; right: 24px; bottom: 158px; z-index: 210; max-width: 250px;
+    background: #fff; color: #10241B; border: 1px solid rgba(16,36,27,0.12);
+    border-radius: 14px 14px 4px 14px; padding: 12px 30px 12px 14px;
+    font-size: 13.5px; line-height: 1.5; cursor: pointer; display: none;
+    box-shadow: 0 10px 30px rgba(11,70,48,0.18);
+  }
+  .ea-nudge.show { display: block; animation: ea-pop 0.25s ease-out; }
+  .ea-nudge-x { position: absolute; top: 4px; right: 6px; background: none; border: none; font-size: 18px; line-height: 1; color: #55665D; cursor: pointer; padding: 4px; }
+
+  .ea-panel {
+    position: fixed; right: 24px; bottom: 160px; z-index: 220;
+    width: 380px; max-width: calc(100vw - 32px); height: 560px; max-height: calc(100vh - 184px);
+    display: none; flex-direction: column; background: #fff; border-radius: 18px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(11,70,48,0.28), 0 0 0 1px rgba(16,36,27,0.08);
+  }
+  .ea-panel.open { display: flex; animation: ea-pop 0.22s ease-out; }
+  .ea-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: linear-gradient(135deg, #0E7C4C, #0B4630); color: #fff; }
+  .ea-avatar { width: 38px; height: 38px; border-radius: 10px; background: #fff; color: #0B4630; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+  .ea-head-text { flex: 1; min-width: 0; }
+  .ea-title { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 1.2; }
+  .ea-sub { font-size: 12px; opacity: 0.85; }
+  .ea-close { background: none; border: none; color: #fff; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; }
+  .ea-close:hover { background: rgba(255,255,255,0.14); }
+  .ea-close svg { width: 20px; height: 20px; }
+
+  .ea-log { flex: 1; overflow-y: auto; padding: 16px 14px; background: #F4FAF6; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+  .ea-msg { max-width: 86%; padding: 10px 13px; border-radius: 14px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ea-bot { align-self: flex-start; background: #fff; color: #10241B; border: 1px solid rgba(16,36,27,0.09); border-bottom-left-radius: 4px; }
+  .ea-user { align-self: flex-end; background: #0B4630; color: #fff; border-bottom-right-radius: 4px; }
+  .ea-links { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 8px; }
+  .ea-link { display: inline-flex; align-items: center; background: #0B4630; color: #fff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; }
+  .ea-link:hover { background: #0E7C4C; }
+  .ea-chips { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
+  .ea-chip { background: #fff; color: #0B4630; border: 1px solid #12996A; border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .ea-chip:hover { background: #E7F5EC; }
+  .ea-typing { align-self: flex-start; background: #fff; border: 1px solid rgba(16,36,27,0.09); border-radius: 14px; border-bottom-left-radius: 4px; padding: 12px 14px; display: flex; gap: 4px; }
+  .ea-typing span { width: 7px; height: 7px; border-radius: 50%; background: #8FA097; animation: ea-blink 1.2s infinite; }
+  .ea-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .ea-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  .ea-form { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid rgba(16,36,27,0.1); background: #fff; }
+  .ea-input { flex: 1; min-width: 0; border: 1px solid rgba(16,36,27,0.18); border-radius: 999px; padding: 10px 14px; font-size: 14px; font-family: inherit; color: #10241B; outline: none; }
+  .ea-input:focus { border-color: #0E7C4C; }
+  .ea-send { border: none; background: #0B4630; color: #fff; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ea-send:hover { background: #0E7C4C; }
+  .ea-send svg { width: 18px; height: 18px; }
+  .ea-note { font-size: 11px; color: #8FA097; text-align: center; padding: 0 12px 9px; background: #fff; }
+
+  @keyframes ea-pop { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+  @keyframes ea-blink { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+
+  @media (max-width: 768px) {
+    .ea-launcher { right: 16px; bottom: 76px; width: 54px; height: 54px; }
+    .ea-nudge { right: 16px; bottom: 140px; }
+    .ea-panel { right: 10px; left: 10px; bottom: 10px; width: auto; max-width: none; max-height: none; height: min(640px, calc(100vh - 20px)); border-radius: 16px; }
+    .ea-input { font-size: 16px; }
+  }
+  @supports (height: 100dvh) {
+    @media (max-width: 768px) { .ea-panel { height: min(640px, calc(100dvh - 20px)); } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ea-panel.open, .ea-nudge.show { animation: none; }
+    .ea-typing span { animation: none; opacity: 0.6; }
+    .ea-log { scroll-behavior: auto; }
+  }
+</style>
+<script>
+(function () {
+  'use strict';
+
+  const PHONE = '070 6709 8658';
+  const TEL = 'tel:+2347067098658';
+  const EMAIL = 'info@emphile.com';
+  const ADDRESS = '2, Mustapha Close, Cement, Dopemu, Lagos';
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const SERVICES = [
+    { name: 'Commercial & Office Cleaning', label: 'Office cleaning', keys: ['office', 'commercial', 'workplace'], detail: 'Daily, weekly, and monthly schedules covering general office sanitation, restroom hygiene, and waste coordination.' },
+    { name: 'Green Cleaning Solutions', label: 'Green cleaning', keys: ['green clean', 'green solution'], detail: 'Eco-friendly, low-toxicity products and sustainable methods that protect health and reduce environmental impact.' },
+    { name: 'Residential Cleaning', label: 'Residential', keys: ['residential', 'home', 'house', 'apartment', 'flat ', 'housekeeping', 'move in', 'move out'], detail: 'Routine housekeeping, deep cleaning, and move-in/move-out cleaning for homes and private residences.' },
+    { name: 'Carpet & Upholstery Cleaning', label: 'Carpet & upholstery', keys: ['carpet', 'upholster', 'sofa', 'couch', 'rug'], detail: 'Hot water extraction, stain treatment, odor control, and fabric sanitization for carpets and furniture.' },
+    { name: 'Floor Care Services', label: 'Floor care', keys: ['floor', 'tile', 'marble', 'terrazzo', 'polish'], detail: 'Scrubbing, polishing, sealing, and surface protection for tile, marble, terrazzo, and vinyl floors.' },
+    { name: 'Window Cleaning', label: 'Windows', keys: ['window', 'glass', 'facade', 'façade'], detail: 'Internal and external glass cleaning, including high-reach and façade cleaning where applicable.' },
+    { name: 'Post-Construction Cleaning', label: 'Post-construction', keys: ['construction', 'renovation', 'builder', 'handover'], detail: 'Debris and dust removal, paint and residue cleaning, and final handover preparation.' },
+    { name: 'Waste Management Support', label: 'Waste management', keys: ['waste', 'recycl', 'disposal', 'garbage', 'refuse'], detail: 'On-site waste segregation guidance, ethical disposal coordination, and recycling support.' },
+    { name: 'Pest Control & Specialized Cleaning', label: 'Pest control', keys: ['pest', 'insect', 'cockroach', 'rodent', 'fumigat', 'termite', 'mosquito', 'specialized', 'specialised'], detail: 'Environmentally safe pest management, plus tailored cleaning for schools, hospitality, and healthcare settings.' },
+  ];
+
+  const LINK_CALL = { label: 'Call ' + PHONE, href: TEL };
+  const LINK_MAIL = { label: 'Email us', href: 'mailto:' + EMAIL };
+  const LINK_FORM = { label: 'Use the quote form', href: '#quote' };
+
+  const MAIN_CHIPS = [
+    { label: 'Our services', intent: 'services' },
+    { label: 'Get a free quote', intent: 'quote' },
+    { label: 'Pricing', intent: 'pricing' },
+    { label: 'Who we serve', intent: 'clients' },
+    { label: 'Contact us', intent: 'contact' },
+    { label: 'Client portal', intent: 'portal' },
+  ];
+  const DEFAULT_CHIPS = [
+    { label: 'Get a free quote', intent: 'quote' },
+    { label: 'Our services', intent: 'services' },
+    { label: 'Contact us', intent: 'contact' },
+  ];
+  const CANCEL_CHIP = { label: 'Cancel', answer: 'cancel' };
+
+  function msg(text, opts) { return Object.assign({ text: text, links: [], chips: DEFAULT_CHIPS }, opts || {}); }
+  function clean(s) { return String(s).replace(/[<>]/g, '').replace(/\s+/g, ' ').trim(); }
+  function norm(s) { return ' ' + s.toLowerCase().replace(/[^a-z0-9&'é ]+/g, ' ').replace(/\s+/g, ' ').trim() + ' '; }
+  function score(text, keys, w) {
+    let s = 0;
+    keys.forEach(function (k) { if (text.indexOf(' ' + k) !== -1) s += w + (k.indexOf(' ') > 0 ? 1 : 0); });
+    return s;
+  }
+  function detectService(text) {
+    const n = norm(text);
+    let best = null, bs = 0;
+    SERVICES.forEach(function (s) { const sc = score(n, s.keys, 3); if (sc > bs) { bs = sc; best = s; } });
+    return best;
+  }
+
+  const INTENTS = [
+    { id: 'greet', w: 2, keys: ['hi ', 'hello', 'hey ', 'good morning', 'good afternoon', 'good evening', 'howdy'],
+      reply: function () { return msg('Hello! I can tell you about our cleaning services, help you get a free quote, or share our contact details. What would you like to do?', { chips: MAIN_CHIPS }); } },
+    { id: 'quote', w: 3, keys: ['quote', 'quotation', 'estimate', 'book', 'hire', 'get started', 'appointment', 'schedule a', 'site visit', 'consultation', 'request a'] },
+    { id: 'pricing', w: 3, keys: ['price', 'pricing', 'cost', 'how much', 'rate', 'charge', 'fee', 'afford', 'cheap', 'budget', 'discount'],
+      reply: function (ctx) {
+        const s = detectService(ctx.text || '');
+        return msg('Every space is different, so we price each job around its size, scope, and how often you need us, with clear reporting and no hidden costs. The quickest way to get a number is a free quote: share a few details and our team will get back to you.',
+          { chips: [{ label: 'Get a free quote', intent: 'quote', service: s ? s.name : undefined }, { label: 'Contact us', intent: 'contact' }], links: [LINK_CALL] });
+      } },
+    { id: 'services', w: 2, keys: ['services', 'service ', 'what do you', 'what can you', 'offer', 'what you do'],
+      reply: function () {
+        return msg('We offer nine services for corporate, commercial, and residential spaces. Tap one to learn more:',
+          { chips: SERVICES.map(function (s, i) { return { label: s.label, intent: 'svc:' + i }; }) });
+      } },
+    { id: 'contact', w: 2, keys: ['contact', 'phone', 'call', 'number', 'email', 'e mail', 'reach', 'address', 'whatsapp', 'human', 'real person', 'agent', 'representative', 'someone', 'talk to', 'speak to', 'operator', 'support'],
+      reply: function () {
+        return msg('You can reach Emphile Cleaning Solutions Ltd directly:\n\nPhone: ' + PHONE + '\nEmail: ' + EMAIL + '\nOffice: ' + ADDRESS,
+          { links: [LINK_CALL, LINK_MAIL], chips: [{ label: 'Get a free quote', intent: 'quote' }, { label: 'Our services', intent: 'services' }] });
+      } },
+    { id: 'location', w: 2, keys: ['where', 'location', 'located', 'area', 'lagos', 'nigeria', 'abuja', 'port harcourt', 'city', 'cities', 'state', 'serve'],
+      reply: function () {
+        return msg('We are based in Lagos, Nigeria (' + ADDRESS + ') and serve clients in Lagos. If you are outside Lagos, call or email us and we will let you know what is possible.',
+          { links: [LINK_CALL, LINK_MAIL] });
+      } },
+    { id: 'about', w: 2, keys: ['about', 'who are you', 'company', 'who is emphile', 'tell me about', 'history', 'background', 'mission', 'vision'],
+      reply: function () {
+        return msg('Emphile Cleaning Solutions Ltd (RC 9765524) is a professional cleaning and facility support company in Lagos. We combine trained personnel, structured processes, and eco-friendly practices to deliver reliable, compliant cleaning. We don\'t just clean, we care.');
+      } },
+    { id: 'staff', w: 2, keys: ['staff', 'cleaner', 'team', 'trained', 'vetted', 'uniform', 'employee', 'worker', 'personnel', 'trust', 'safe '],
+      reply: function () {
+        return msg('Our cleaners are professionally trained, vetted, and uniformed, and they follow mandatory PPE and safety procedures on every job.');
+      } },
+    { id: 'eco', w: 2, keys: ['eco', 'sustainab', 'environment', 'chemical', 'toxic', 'organic', 'natural product'],
+      reply: function () {
+        return msg('Sustainability is part of how we work: environmentally responsible cleaning products, safe chemical storage and handling, waste segregation and proper disposal, and energy-efficient equipment where possible.',
+          { chips: [{ label: 'Green cleaning', intent: 'svc:1' }, { label: 'Get a free quote', intent: 'quote' }] });
+      } },
+    { id: 'flex', w: 2, keys: ['hourly', 'retainer', 'contract', 'monthly', 'weekly', 'daily', 'recurring', 'one off', 'one time', 'flexible', 'schedule ', 'regular', 'how often', 'frequency'],
+      reply: function () {
+        return msg('We work with hourly, retainer-based, and project-based arrangements, so the service fits your schedule and budget. Tell us what you need in a quote request and our team will recommend a plan.');
+      } },
+    { id: 'quality', w: 2, keys: ['quality', 'inspection', 'sop', 'checklist', 'standard', 'guarantee', 'complaint'],
+      reply: function () {
+        return msg('Quality is built into every service: pre-service site assessment, documented SOPs, checklists, routine on-site inspections, periodic quality reports, and corrective action plans if something is not right.');
+      } },
+    { id: 'clients', w: 2, keys: ['who do you serve', 'who do you clean', 'clean for', 'clients', 'customers', 'industries', 'segment', 'school', 'hospital', 'clinic', 'hotel', 'event', 'estate', 'corporate'],
+      reply: function () {
+        return msg('We serve corporate offices, residential estates, educational institutions, hospitality and events, and healthcare facilities.',
+          { chips: [{ label: 'Our services', intent: 'services' }, { label: 'Get a free quote', intent: 'quote' }] });
+      } },
+    { id: 'licensed', w: 2, keys: ['licensed', 'licence', 'license', 'registered', 'compliant', 'insured', 'insurance', 'rc number', 'legit'],
+      reply: function () {
+        return msg('Emphile Cleaning Solutions Ltd is a registered company (RC 9765524) with fully registered, regulatory-compliant operations.');
+      } },
+    { id: 'portal', w: 2, keys: ['portal', 'login', 'log in', 'sign in', 'sign up', 'signup', 'account', 'invoice', 'pay ', 'payment', 'password', 'client area'],
+      reply: function () {
+        return msg('Existing clients can log in to view their invoices and pay online. New here? Create a free account first.',
+          { links: [{ label: 'Client login', href: 'login.html' }, { label: 'Create account', href: 'signup.html' }] });
+      } },
+    { id: 'hours', w: 3, keys: ['hours', 'open ', 'opening', 'closing', 'available', 'availability', 'weekend', 'sunday', 'saturday', 'emergency', 'urgent', 'same day', 'how soon', 'how long'],
+      reply: function () {
+        return msg('For availability and scheduling, the quickest route is to call ' + PHONE + ' or send a quote request. Our team will confirm what works for you.',
+          { links: [LINK_CALL], chips: [{ label: 'Get a free quote', intent: 'quote' }] });
+      } },
+    { id: 'thanks', w: 2, keys: ['thank', 'thx', 'cheers', 'appreciate'],
+      reply: function () { return msg('You\'re welcome! Is there anything else I can help with?', { chips: MAIN_CHIPS }); } },
+    { id: 'bye', w: 2, keys: ['bye', 'goodbye', 'see you', 'that is all', 'that\'s all'],
+      reply: function () { return msg('Thanks for stopping by! If you need us, we are one call away on ' + PHONE + '.', { chips: [], links: [LINK_CALL] }); } },
+  ];
+  SERVICES.forEach(function (s, i) {
+    INTENTS.push({
+      id: 'svc:' + i, w: 3, keys: s.keys,
+      reply: function () {
+        return msg(s.name + ': ' + s.detail, { chips: [{ label: 'Get a quote for this', intent: 'quote', service: s.name }, { label: 'Other services', intent: 'services' }] });
+      },
+    });
+  });
+
+  function fallback() {
+    return msg('I\'m not sure I understood that. I\'m a simple assistant, so I work best with questions about our services, pricing, or how to reach us. You can also speak to our team directly.',
+      { chips: MAIN_CHIPS, links: [LINK_CALL, LINK_MAIL] });
+  }
+
+  // ---------- UI ----------
+  const wrap = document.createElement('div');
+  wrap.innerHTML =
+    '<div class="ea-nudge" role="status"><button type="button" class="ea-nudge-x" aria-label="Dismiss">&times;</button>Hi 👋 Need help? Ask me about our services or get a free quote.</div>' +
+    '<div class="ea-panel" id="eaPanel" role="dialog" aria-label="Emphile virtual assistant">' +
+      '<div class="ea-head"><div class="ea-avatar">EC</div><div class="ea-head-text"><div class="ea-title">Emphile Assistant</div><div class="ea-sub">Virtual assistant · here to help</div></div>' +
+      '<button type="button" class="ea-close" aria-label="Close chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>' +
+      '<div class="ea-log" role="log" aria-live="polite" aria-label="Conversation"></div>' +
+      '<form class="ea-form" autocomplete="off"><input class="ea-input" type="text" maxlength="500" placeholder="Type your question…" aria-label="Type your message">' +
+      '<button class="ea-send" type="submit" aria-label="Send message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button></form>' +
+      '<div class="ea-note">Automated assistant · Urgent? Call ' + PHONE + '</div>' +
+    '</div>' +
+    '<button type="button" class="ea-launcher" aria-label="Open virtual assistant chat" aria-expanded="false" aria-controls="eaPanel">' +
+      '<svg class="ea-ic-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.6-.8L3 21l1.9-5.1A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg>' +
+      '<svg class="ea-ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+    '</button>';
+  while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
+
+  const nudge = document.querySelector('.ea-nudge');
+  const panel = document.getElementById('eaPanel');
+  const launcher = document.querySelector('.ea-launcher');
+  const log = panel.querySelector('.ea-log');
+  const form = panel.querySelector('.ea-form');
+  const input = panel.querySelector('.ea-input');
+
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function toBottom() { log.scrollTop = log.scrollHeight; }
+  function clearChips() { log.querySelectorAll('.ea-chips').forEach(function (c) { c.remove(); }); }
+  function addUser(text) { log.appendChild(el('div', 'ea-msg ea-user', text)); toBottom(); }
+
+  function renderBot(m) {
+    if (m.text) log.appendChild(el('div', 'ea-msg ea-bot', m.text));
+    if (m.links && m.links.length) {
+      const row = el('div', 'ea-links');
+      m.links.forEach(function (l) {
+        const a = el('a', 'ea-link', l.label);
+        a.href = l.href;
+        if (l.href.charAt(0) === '#') {
+          a.addEventListener('click', function (e) {
+            e.preventDefault();
+            close(false);
+            const t = document.querySelector(l.href);
+            if (t) t.scrollIntoView({ behavior: 'smooth' });
+          });
+        }
+        row.appendChild(a);
+      });
+      log.appendChild(row);
+    }
+    if (m.chips && m.chips.length) {
+      const row = el('div', 'ea-chips');
+      m.chips.forEach(function (c) {
+        const b = el('button', 'ea-chip', c.label);
+        b.type = 'button';
+        b.addEventListener('click', function () { onChip(c); });
+        row.appendChild(b);
+      });
+      log.appendChild(row);
+    }
+    toBottom();
+  }
+
+  let chain = Promise.resolve();
+  function enqueue(fn) { chain = chain.then(fn).catch(function (e) { console.error('assistant:', e); }); return chain; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function showTyping() { const t = el('div', 'ea-typing'); t.innerHTML = '<span></span><span></span><span></span>'; log.appendChild(t); toBottom(); return t; }
+  function say(m) {
+    return enqueue(async function () {
+      const t = showTyping();
+      await sleep(reduced ? 0 : 350 + Math.min((m.text || '').length * 5, 500));
+      t.remove();
+      renderBot(m);
+    });
+  }
+
+  // ---------- Conversation ----------
+  let flow = null;
+  let lastSent = 0;
+
+  function runIntent(id, ctx) {
+    ctx = ctx || {};
+    if (id === 'quote') return startQuote(ctx.service || detectService(ctx.text || '') && detectService(ctx.text || '').name);
+    const it = INTENTS.filter(function (x) { return x.id === id; })[0];
+    return say(it ? it.reply(ctx) : fallback());
+  }
+
+  function route(text) {
+    const n = norm(text);
+    let best = null, bs = 0;
+    INTENTS.forEach(function (it) { const s = score(n, it.keys, it.w || 2); if (s > bs) { bs = s; best = it; } });
+    if (!best) return say(fallback());
+    return runIntent(best.id, { text: text });
+  }
+
+  function onChip(c) {
+    clearChips();
+    addUser(c.label);
+    if (c.intent) { flow = null; setPlaceholder(); runIntent(c.intent, { service: c.service }); }
+    else if (c.answer !== undefined) flowInput(c.answer);
+  }
+
+  function setPlaceholder(t) { input.placeholder = t || 'Type your question…'; }
+
+  function startQuote(service) {
+    flow = { step: service ? 'name' : 'service', data: {} };
+    if (service) {
+      flow.data.service = service;
+      setPlaceholder('Your name');
+      return say(msg('Happy to help with ' + service + '. I\'ll collect a few details and pass them to our team. First, what\'s your name?', { chips: [CANCEL_CHIP] }));
+    }
+    setPlaceholder('Or type the service you need');
+    const chips = SERVICES.map(function (s) { return { label: s.label, answer: s.name }; });
+    chips.push({ label: 'Not sure yet', answer: 'Other' });
+    chips.push(CANCEL_CHIP);
+    return say(msg('Great, I\'ll collect a few details and pass them to our team. Which service are you interested in?', { chips: chips, links: [LINK_FORM] }));
+  }
+
+  function cancelFlow() {
+    flow = null; setPlaceholder();
+    return say(msg('No problem, I\'ve cancelled that. Is there anything else I can help with?', { chips: MAIN_CHIPS }));
+  }
+
+  function summary(d) {
+    return 'Here\'s what I\'ll send to our team:\n\nService: ' + d.service + '\nName: ' + d.name + '\nEmail: ' + d.email +
+      '\nPhone: ' + (d.phone || '—') + '\nDetails: ' + (d.details || '—') +
+      '\n\nYour details are emailed to our team so they can respond to your request. Shall I send it?';
+  }
+
+  function flowInput(raw) {
+    const text = clean(raw);
+    if (/^(cancel|stop|quit|exit|nevermind|never mind)$/i.test(text)) return cancelFlow();
+    const d = flow.data;
+    switch (flow.step) {
+      case 'service': {
+        const s = detectService(text);
+        if (s) d.service = s.name;
+        else if (text.toLowerCase() === 'other' || text.length < 2) d.service = 'Other';
+        else { d.service = 'Other'; d.details = 'Requested service: ' + text.slice(0, 200); }
+        flow.step = 'name'; setPlaceholder('Your name');
+        return say(msg('Thanks. What\'s your name?', { chips: [CANCEL_CHIP] }));
+      }
+      case 'name': {
+        if (text.length < 2 || text.length > 60 || /\d{3,}/.test(text) || text.indexOf('@') !== -1) {
+          return say(msg('Could you tell me your name, please? For example: Ada Okafor.', { chips: [CANCEL_CHIP] }));
+        }
+        d.name = text; flow.step = 'email'; setPlaceholder('you@example.com');
+        return say(msg('Nice to meet you, ' + text.split(' ')[0] + '. What\'s the best email address to reach you on?', { chips: [CANCEL_CHIP] }));
+      }
+      case 'email': {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text) || text.length > 120) {
+          return say(msg('That doesn\'t look like a valid email address. Could you enter it again?', { chips: [CANCEL_CHIP] }));
+        }
+        d.email = text; flow.step = 'phone'; setPlaceholder('Phone number (optional)');
+        return say(msg('Got it. And a phone number? This is optional, but it helps our team reach you faster.', { chips: [{ label: 'Skip', answer: 'skip' }, CANCEL_CHIP] }));
+      }
+      case 'phone': {
+        if (text.toLowerCase() === 'skip' || text === '') d.phone = '';
+        else {
+          const digits = text.replace(/\D/g, '');
+          if (!/^[0-9+()\-. ]+$/.test(text) || digits.length < 7 || digits.length > 15) {
+            return say(msg('That doesn\'t look like a valid phone number. Try again, or skip this step.', { chips: [{ label: 'Skip', answer: 'skip' }, CANCEL_CHIP] }));
+          }
+          d.phone = text;
+        }
+        flow.step = 'details'; setPlaceholder('Location, size of space, timing…');
+        return say(msg('Last one: anything else we should know, like your location, the size of the space, or when you need us? (optional)', { chips: [{ label: 'Skip', answer: 'skip' }, CANCEL_CHIP] }));
+      }
+      case 'details': {
+        if (text.toLowerCase() !== 'skip' && text !== '') {
+          d.details = (d.details ? d.details + '. ' : '') + text.slice(0, 1000);
+        }
+        flow.step = 'confirm'; setPlaceholder('Type yes to send');
+        return say(msg(summary(d), { chips: [{ label: 'Send request', answer: 'yes' }, { label: 'Start over', answer: 'restart' }, CANCEL_CHIP] }));
+      }
+      case 'confirm': {
+        if (/^(yes|y|send|confirm|ok|okay|sure|send request)$/i.test(text)) return sendLead();
+        if (/^(restart|start over|edit|change|no)$/i.test(text)) return startQuote();
+        return say(msg('Would you like me to send this request to our team?', { chips: [{ label: 'Send request', answer: 'yes' }, { label: 'Start over', answer: 'restart' }, CANCEL_CHIP] }));
+      }
+      default:
+        return say(msg('One moment, I\'m still sending your request…', { chips: [] }));
+    }
+  }
+
+  function sendLead() {
+    if (flow.step === 'sending') return;
+    if (Date.now() - lastSent < 60000) {
+      flow = null; setPlaceholder();
+      return say(msg('It looks like your request was just sent, so I\'ve held off on sending a duplicate. Our team will be in touch shortly.', { chips: MAIN_CHIPS, links: [LINK_CALL] }));
+    }
+    const d = flow.data;
+    flow.step = 'sending';
+    return enqueue(async function () {
+      const t = showTyping();
+      let ok = false;
+      try {
+        if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') throw new Error('not configured');
+        const parts = d.name.split(' ');
+        const res = await fetch(SUPABASE_URL + '/functions/v1/send-quote-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY, 'apikey': SUPABASE_KEY },
+          body: JSON.stringify({
+            firstName: parts.shift(),
+            lastName: parts.join(' '),
+            email: d.email,
+            phone: d.phone || '',
+            service: d.service === 'Other' ? 'Other' : d.service,
+            details: '[Sent via website assistant] ' + (d.details || ''),
+          }),
+        });
+        ok = res.ok;
+      } catch (e) { ok = false; }
+      t.remove();
+      if (ok) {
+        lastSent = Date.now();
+        flow = null; setPlaceholder();
+        renderBot(msg('Request sent. Thank you, ' + d.name.split(' ')[0] + '! Our team will be in touch shortly. For anything urgent, call ' + PHONE + '.', { chips: [{ label: 'Our services', intent: 'services' }, { label: 'Contact us', intent: 'contact' }], links: [LINK_CALL] }));
+      } else {
+        flow.step = 'confirm'; setPlaceholder('Type yes to try again');
+        renderBot(msg('Sorry, I couldn\'t send that just now. You can try again, or reach our team directly.', { chips: [{ label: 'Try again', answer: 'yes' }, CANCEL_CHIP], links: [LINK_CALL, LINK_MAIL] }));
+      }
+    });
+  }
+
+  // ---------- Open / close ----------
+  let started = false;
+  function open() {
+    panel.classList.add('open');
+    launcher.setAttribute('aria-expanded', 'true');
+    launcher.setAttribute('aria-label', 'Close virtual assistant chat');
+    hideNudge();
+    if (!started) {
+      started = true;
+      say(msg('Hi, I\'m the Emphile virtual assistant. I can tell you about our cleaning services, help you get a free quote, or share our contact details. What would you like to do?', { chips: MAIN_CHIPS }));
+    }
+    setTimeout(function () { input.focus(); }, 60);
+  }
+  function close(refocus) {
+    panel.classList.remove('open');
+    launcher.setAttribute('aria-expanded', 'false');
+    launcher.setAttribute('aria-label', 'Open virtual assistant chat');
+    if (refocus !== false) launcher.focus();
+  }
+  launcher.addEventListener('click', function () { panel.classList.contains('open') ? close() : open(); });
+  panel.querySelector('.ea-close').addEventListener('click', function () { close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const t = clean(input.value);
+    if (!t) return;
+    input.value = '';
+    clearChips();
+    addUser(t);
+    if (flow) flowInput(t); else route(t);
+  });
+
+  // ---------- Gentle one-time nudge ----------
+  function store(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) { return null; } }
+  function hideNudge() { nudge.classList.remove('show'); store('ea_nudged', '1'); }
+  nudge.querySelector('.ea-nudge-x').addEventListener('click', function (e) { e.stopPropagation(); hideNudge(); });
+  nudge.addEventListener('click', function () { open(); });
+  if (!store('ea_nudged')) {
+    setTimeout(function () {
+      if (!panel.classList.contains('open') && !store('ea_nudged')) {
+        nudge.classList.add('show');
+        setTimeout(function () { nudge.classList.remove('show'); store('ea_nudged', '1'); }, 12000);
+      }
+    }, 10000);
+  }
+})();
+</script>
 </body>
 </html>
