@@ -370,6 +370,9 @@
   .reveal-delay-2 { transition-delay: 0.16s; }
   .reveal-delay-3 { transition-delay: 0.24s; }
 
+  .call-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); line-height: 1.5; margin: 4px 0 14px; cursor: pointer; }
+  .call-consent input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--green); flex-shrink: 0; }
+
   /* Floating call button */
   .float-call {
     position: fixed; bottom: 24px; right: 24px; z-index: 200;
@@ -733,9 +736,10 @@
           </select>
         </div>
         <div class="form-group"><label class="form-label">ADDITIONAL DETAILS</label><textarea class="form-textarea" id="qDetails" placeholder="Tell us more about your space or requirements..."></textarea></div>
+        <label class="call-consent"><input type="checkbox" id="qCallOk"><span>It's OK for Emphile's virtual assistant to call me on the number above about this request (optional).</span></label>
         <button class="form-submit" id="quoteSubmitBtn" type="submit">Send Request →</button>
       </form>
-      <p class="form-note">Submitting this form sends your request directly to our team by email.</p>
+      <p class="form-note">Submitting this form sends your request directly to our team by email. We only use your details to respond to your request.</p>
     </div>
   </div>
 </section>
@@ -808,6 +812,31 @@
   const quoteSubmitBtn = document.getElementById('quoteSubmitBtn');
   const quoteError = document.getElementById('quoteError');
 
+  // Saves the request so the team can follow up. Never blocks or breaks the visitor's submission.
+  async function saveLead(p, callOk, source) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          first_name: (p.firstName || '').slice(0, 100),
+          last_name: (p.lastName || '').slice(0, 100),
+          email: (p.email || '').slice(0, 200),
+          phone: (p.phone || '').slice(0, 40),
+          service: (p.service || '').slice(0, 120),
+          details: (p.details || '').slice(0, 2000),
+          source: source,
+          call_consent: !!(callOk && p.phone),
+        }),
+      });
+    } catch (e) { /* ignore: the email already reached the team */ }
+  }
+
   quoteForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     quoteError.style.display = 'none';
@@ -839,6 +868,7 @@
         throw new Error(err.error || 'Something went wrong. Please try again.');
       }
 
+      saveLead(payload, document.getElementById('qCallOk').checked, 'website_form');
       quoteSubmitBtn.textContent = '✓ Request sent — we\'ll be in touch shortly';
       quoteSubmitBtn.style.background = '#0B4630';
       quoteForm.reset();
@@ -1207,7 +1237,7 @@
 
   function summary(d) {
     return 'Here\'s what I\'ll send to our team:\n\nService: ' + d.service + '\nName: ' + d.name + '\nEmail: ' + d.email +
-      '\nPhone: ' + (d.phone || '—') + '\nDetails: ' + (d.details || '—') +
+      '\nPhone: ' + (d.phone || '—') + (d.phone ? '\nPhone call from our virtual assistant: ' + (d.callOk ? 'OK' : 'No') : '') + '\nDetails: ' + (d.details || '—') +
       '\n\nYour details are emailed to our team so they can respond to your request. Shall I send it?';
   }
 
@@ -1247,6 +1277,15 @@
           }
           d.phone = text;
         }
+        if (d.phone) {
+          flow.step = 'callok'; setPlaceholder('Yes or no');
+          return say(msg('Would it be OK for our virtual assistant to call you on that number about your request?', { chips: [{ label: 'Yes, that\'s fine', answer: 'yes' }, { label: 'No, email only', answer: 'no' }, CANCEL_CHIP] }));
+        }
+        flow.step = 'details'; setPlaceholder('Location, size of space, timing…');
+        return say(msg('Last one: anything else we should know, like your location, the size of the space, or when you need us? (optional)', { chips: [{ label: 'Skip', answer: 'skip' }, CANCEL_CHIP] }));
+      }
+      case 'callok': {
+        d.callOk = /^(yes|y|ok|okay|sure|fine|yes, that's fine|yeah)$/i.test(text);
         flow.step = 'details'; setPlaceholder('Location, size of space, timing…');
         return say(msg('Last one: anything else we should know, like your location, the size of the space, or when you need us? (optional)', { chips: [{ label: 'Skip', answer: 'skip' }, CANCEL_CHIP] }));
       }
@@ -1294,6 +1333,10 @@
           }),
         });
         ok = res.ok;
+        if (ok && typeof saveLead === 'function') {
+          const parts2 = d.name.split(' ');
+          saveLead({ firstName: parts2.shift(), lastName: parts2.join(' '), email: d.email, phone: d.phone || '', service: d.service, details: '[Sent via website assistant] ' + (d.details || '') }, !!d.callOk, 'website_chat');
+        }
       } catch (e) { ok = false; }
       t.remove();
       if (ok) {

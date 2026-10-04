@@ -16,6 +16,10 @@
     cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap;
   }
   .btn-print:hover { border-color: var(--green); }
+  .ai-h { font-size: 15px; color: var(--green-dk); margin: 26px 0 10px; font-family: 'Fraunces', serif; }
+  .ai-sub { font-size: 12px; color: var(--muted); display: block; }
+  .ai-pill { font-size: 11.5px; padding: 2px 9px; }
+  .btn-print:disabled { opacity: 0.45; cursor: not-allowed; }
   #printArea { display: none; }
   @media print {
     body * { visibility: hidden; }
@@ -151,6 +155,31 @@
     <h2>Quality inspections</h2>
     <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;">Checklists staff have submitted for review. Approve them, or send them back for rework with notes.</p>
     <div id="inspectionsContent"><div class="loading-state">Loading checklists…</div></div>
+  </div>
+
+  <div class="admin-section">
+    <h2>AI calling assistant</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:6px;">Emphile's virtual assistant introduces itself as an AI on every call. It only calls people who asked to be contacted or who are your customers, between 9am and 6pm Lagos time (Mon to Sat), and never calls numbers on the do-not-call list. Results appear below a minute or two after each call.</p>
+    <div id="aiNotice" style="display:none;padding:12px 16px;border-radius:8px;font-size:13.5px;margin:12px 0;"></div>
+
+    <h3 class="ai-h">Quote requests</h3>
+    <div id="aiLeads"><div class="loading-state">Loading…</div></div>
+
+    <h3 class="ai-h">Upcoming jobs (reminder calls)</h3>
+    <div id="aiJobs"></div>
+
+    <h3 class="ai-h">Recently completed jobs (feedback calls)</h3>
+    <div id="aiDone"></div>
+
+    <h3 class="ai-h" style="display:flex;align-items:center;gap:12px;">Call log <button type="button" class="btn-print" id="aiRefreshBtn">Refresh</button></h3>
+    <div id="aiLog"></div>
+
+    <h3 class="ai-h">Do-not-call list</h3>
+    <div class="admin-form-grid">
+      <div class="form-group"><label class="form-label">PHONE NUMBER</label><input type="tel" class="form-input" id="dncPhone" placeholder="0803 123 4567"></div>
+      <div class="form-group" style="display:flex;align-items:flex-end;"><button type="button" class="btn-pay" id="dncAddBtn" style="padding:12px 20px;">Add to list</button></div>
+    </div>
+    <div id="aiDnc" style="margin-top:14px;"></div>
   </div>
 </div>
 
@@ -762,6 +791,190 @@
     await loadInvoices();
   });
 
+  // ---------- AI calling assistant ----------
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function normPhone(raw) {
+    if (!raw) return null;
+    let s = String(raw).trim().replace(/[\s\-().]/g, '');
+    if (s.startsWith('00')) s = '+' + s.slice(2);
+    if (!s.startsWith('+')) {
+      if (s.startsWith('234')) s = '+' + s;
+      else if (s.startsWith('0')) s = '+234' + s.slice(1);
+      else return null;
+    }
+    return /^\+\d{9,15}$/.test(s) ? s : null;
+  }
+  const AI_OUTCOMES = {
+    interested: 'Interested', not_interested: 'Not interested', callback_requested: 'Wants a callback',
+    site_visit_requested: 'Wants a site visit', confirmed: 'Confirmed', reschedule_requested: 'Wants to reschedule',
+    review_agreed: 'Agreed to review', unhappy: 'Unhappy - follow up', wrong_person: 'Wrong person',
+    no_conversation: 'No real conversation', do_not_call: 'Asked not to be called',
+  };
+  const AI_PURPOSES = { quote_followup: 'Quote follow-up', job_reminder: 'Job reminder', review_request: 'Feedback call' };
+  const AI_STATUS_CLS = { completed: 'status-Paid', calling: 'status-Submitted', queued: 'status-Submitted', no_answer: 'status-Pending', failed: 'status-Overdue' };
+  const AI_STATUS_LABEL = { completed: 'Completed', calling: 'In progress', queued: 'Queued', no_answer: 'No answer', failed: 'Failed' };
+
+  let aiCallsByKey = {};
+  let aiDncSet = new Set();
+
+  function aiNotice(msg, ok) {
+    const n = document.getElementById('aiNotice');
+    n.textContent = msg;
+    n.style.display = 'block';
+    n.style.background = ok ? 'var(--mint)' : '#FCEBEB';
+    n.style.color = ok ? 'var(--green-dk)' : '#A32D2D';
+  }
+
+  function lastCallLabel(key) {
+    const c = aiCallsByKey[key];
+    if (!c) return '<span class="ai-sub">Not called yet</span>';
+    const st = '<span class="status-pill ai-pill ' + (AI_STATUS_CLS[c.status] || 'status-Pending') + '">' + (AI_STATUS_LABEL[c.status] || c.status) + '</span>';
+    const out = c.outcome ? '<span class="ai-sub">' + escHtml(AI_OUTCOMES[c.outcome] || c.outcome) + '</span>' : '';
+    return st + out;
+  }
+
+  function aiTable(headers, rows, emptyMsg) {
+    if (!rows.length) return '<div class="empty-state" style="padding:24px;">' + emptyMsg + '</div>';
+    return '<table class="invoice-table"><thead><tr>' + headers.map((h) => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+  }
+
+  function callButton(attrs, phone, extraDisabledReason) {
+    const norm = normPhone(phone);
+    let reason = extraDisabledReason || '';
+    if (!reason && !norm) reason = 'No valid phone number';
+    if (!reason && aiDncSet.has(norm)) reason = 'On do-not-call list';
+    return reason
+      ? '<button class="btn-print" disabled title="' + escHtml(reason) + '">Call</button><span class="ai-sub">' + escHtml(reason) + '</span>'
+      : '<button class="btn-print" data-ai-call=\'' + escHtml(JSON.stringify(attrs)) + '\'>Call now</button>';
+  }
+
+  async function loadAiCalls() {
+    const notice = document.getElementById('aiNotice');
+    const [leadsRes, callsRes, dncRes] = await Promise.all([
+      supabaseClient.from('leads').select('*').order('created_at', { ascending: false }).limit(30),
+      supabaseClient.from('ai_calls').select('*').order('created_at', { ascending: false }).limit(100),
+      supabaseClient.from('dnc').select('*').order('created_at', { ascending: false }),
+    ]);
+
+    if (leadsRes.error || callsRes.error || dncRes.error) {
+      document.getElementById('aiLeads').innerHTML = '<div class="empty-state">The AI calling database tables have not been set up yet. Run the SQL file from the Emphile_AI_Caller folder in Supabase first.</div>';
+      return;
+    }
+
+    const leads = leadsRes.data || [];
+    const calls = callsRes.data || [];
+    const dnc = dncRes.data || [];
+    aiDncSet = new Set(dnc.map((d) => d.phone));
+
+    aiCallsByKey = {};
+    calls.forEach((c) => {
+      const key = c.lead_id ? 'lead:' + c.lead_id : (c.invoice_id ? c.purpose + ':' + c.invoice_id : null);
+      if (key && !aiCallsByKey[key]) aiCallsByKey[key] = c;
+    });
+
+    // Quote requests
+    document.getElementById('aiLeads').innerHTML = aiTable(
+      ['Name', 'Phone', 'Service', 'Received', 'OK to call?', 'Last call', ''],
+      leads.map((l) => {
+        const name = ((l.first_name || '') + ' ' + (l.last_name || '')).trim();
+        const consent = l.call_consent && l.phone;
+        return '<tr><td>' + escHtml(name) + '<span class="ai-sub">' + escHtml(l.email || '') + '</span></td>' +
+          '<td>' + escHtml(l.phone || '-') + '</td><td>' + escHtml(l.service || '-') + '</td>' +
+          '<td>' + fmtDateTime(l.created_at) + '</td>' +
+          '<td>' + (consent ? '<span class="status-pill ai-pill status-Paid">Yes</span>' : '<span class="status-pill ai-pill status-Pending">No</span>') + '</td>' +
+          '<td>' + lastCallLabel('lead:' + l.id) + '</td>' +
+          '<td style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">' +
+          callButton({ purpose: 'quote_followup', lead_id: l.id }, l.phone, consent ? '' : 'They did not agree to a call') + '</td></tr>';
+      }),
+      'No quote requests saved yet. New requests from the website form and chat will appear here.'
+    );
+
+    // Jobs from invoices already loaded on this page
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const jobs = Object.values(invoicesById || {});
+    const dayMs = 86400000;
+    const upcoming = jobs.filter((j) => j.job_status !== 'Completed' && j.job_date && (new Date(j.job_date + 'T00:00:00') - today) / dayMs >= 0 && (new Date(j.job_date + 'T00:00:00') - today) / dayMs <= 3)
+      .sort((a, b) => a.job_date.localeCompare(b.job_date));
+    const done = jobs.filter((j) => j.job_status === 'Completed' && j.job_date && (today - new Date(j.job_date + 'T00:00:00')) / dayMs <= 14)
+      .sort((a, b) => b.job_date.localeCompare(a.job_date));
+
+    const jobRow = (j, purpose) => {
+      const cust = profilesById[j.customer_id] || {};
+      return '<tr><td>' + escHtml(cust.full_name || cust.email || 'Customer') + '<span class="ai-sub">' + escHtml(cust.phone || 'No phone saved') + '</span></td>' +
+        '<td>' + escHtml(j.service_type) + '</td><td>' + fmtDate(j.job_date) + '</td>' +
+        '<td>' + lastCallLabel(purpose + ':' + j.id) + '</td>' +
+        '<td style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">' +
+        callButton({ purpose: purpose, invoice_id: j.id }, cust.phone) + '</td></tr>';
+    };
+    document.getElementById('aiJobs').innerHTML = aiTable(['Customer', 'Service', 'Job date', 'Last call', ''], upcoming.map((j) => jobRow(j, 'job_reminder')), 'No jobs in the next 3 days.');
+    document.getElementById('aiDone').innerHTML = aiTable(['Customer', 'Service', 'Job date', 'Last call', ''], done.map((j) => jobRow(j, 'review_request')), 'No jobs completed in the last 14 days.');
+
+    // Call log
+    document.getElementById('aiLog').innerHTML = aiTable(
+      ['When', 'Who', 'Reason', 'Result', 'Summary'],
+      calls.slice(0, 40).map((c) => '<tr><td>' + fmtDateTime(c.created_at) + (c.duration_seconds ? '<span class="ai-sub">' + c.duration_seconds + 's</span>' : '') + '</td>' +
+        '<td>' + escHtml(c.contact_name || '-') + '<span class="ai-sub">' + escHtml(c.phone) + '</span></td>' +
+        '<td>' + escHtml(AI_PURPOSES[c.purpose] || c.purpose) + '</td>' +
+        '<td><span class="status-pill ai-pill ' + (AI_STATUS_CLS[c.status] || 'status-Pending') + '">' + (AI_STATUS_LABEL[c.status] || c.status) + '</span>' +
+        (c.outcome ? '<span class="ai-sub">' + escHtml(AI_OUTCOMES[c.outcome] || c.outcome) + '</span>' : '') +
+        (c.callback_time ? '<span class="ai-sub">Preferred: ' + escHtml(c.callback_time) + '</span>' : '') + '</td>' +
+        '<td style="max-width:320px;font-size:13px;">' + escHtml(c.summary || '') + '</td></tr>'),
+      'No calls yet.'
+    );
+
+    // Do-not-call list
+    document.getElementById('aiDnc').innerHTML = dnc.length
+      ? dnc.map((d) => '<span class="status-pill status-Overdue" style="margin:0 8px 8px 0;display:inline-flex;gap:8px;align-items:center;">' + escHtml(d.phone) +
+        ' <button type="button" data-dnc-remove="' + escHtml(d.phone) + '" style="background:none;border:none;cursor:pointer;color:inherit;font-size:14px;" title="Remove">&times;</button></span>').join('')
+      : '<span class="ai-sub">No numbers on the list.</span>';
+
+    // wire up
+    document.querySelectorAll('[data-ai-call]').forEach((btn) => {
+      btn.addEventListener('click', () => startAiCall(JSON.parse(btn.getAttribute('data-ai-call')), btn));
+    });
+    document.querySelectorAll('[data-dnc-remove]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        if (!confirm('Remove this number from the do-not-call list?')) return;
+        await supabaseClient.from('dnc').delete().eq('phone', b.getAttribute('data-dnc-remove'));
+        await loadAiCalls();
+      });
+    });
+  }
+
+  async function startAiCall(payload, btn) {
+    if (!confirm('Start an AI call now? The assistant will phone this person straight away.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Calling…';
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const res = await fetch(SUPABASE_URL + '/functions/v1/place-ai-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token, 'apikey': SUPABASE_KEY },
+        body: JSON.stringify(payload),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || 'The call could not be started.');
+      aiNotice('Call started. The result will appear in the call log in a minute or two.', true);
+    } catch (e) {
+      aiNotice(e.message, false);
+    }
+    setTimeout(loadAiCalls, 1500);
+  }
+
+  document.getElementById('aiRefreshBtn').addEventListener('click', loadAiCalls);
+  document.getElementById('dncAddBtn').addEventListener('click', async () => {
+    const input = document.getElementById('dncPhone');
+    const p = normPhone(input.value);
+    if (!p) { aiNotice('That does not look like a valid phone number.', false); return; }
+    const { error } = await supabaseClient.from('dnc').upsert({ phone: p, reason: 'Added by admin' }, { onConflict: 'phone' });
+    if (error) { aiNotice('Could not add the number: ' + error.message, false); return; }
+    input.value = '';
+    aiNotice(p + ' added to the do-not-call list.', true);
+    await loadAiCalls();
+  });
+
   (async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
@@ -788,6 +1001,7 @@
     await loadInvoices();
     await loadFollowups();
     await loadInspections();
+    await loadAiCalls();
   })();
 </script>
 </body>
