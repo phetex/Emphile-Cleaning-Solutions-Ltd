@@ -147,6 +147,23 @@
   </div>
 
   <div class="admin-section">
+    <h2>Manage admins</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;">Admins can see every customer, invoice and note, manage staff, and place AI calls. Only add people you fully trust. The person must sign up first (same signup page as customers), then look them up here by email.</p>
+    <div class="alert alert-error" id="adminMgmtMsg" style="display:none;padding:12px 16px;border-radius:8px;font-size:13.5px;margin-bottom:16px;"></div>
+    <div class="admin-form-grid">
+      <div class="form-group">
+        <label class="form-label">ADMIN EMAIL</label>
+        <input type="email" class="form-input" id="adminEmail" placeholder="name@emphile.com">
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;gap:10px;">
+        <button type="button" class="btn-pay" id="grantAdminBtn" style="padding:12px 20px;">Make admin</button>
+        <button type="button" class="btn-delete" id="revokeAdminBtn">Remove admin</button>
+      </div>
+    </div>
+    <div id="adminListContent" style="margin-top:20px;"></div>
+  </div>
+
+  <div class="admin-section">
     <h2>All invoices / jobs</h2>
     <div id="invoicesContent"><div class="loading-state">Loading invoices…</div></div>
   </div>
@@ -394,6 +411,64 @@
         staffProfiles.map((s) => '<span class="status-pill status-Paid" style="margin:0 6px 6px 0;display:inline-block;">' + (s.full_name || s.email) + '</span>').join('');
     }
   }
+
+  // ---------- Manage admins ----------
+  let currentAdminId = null;
+
+  function adminMsg(text, ok) {
+    const m = document.getElementById('adminMgmtMsg');
+    m.textContent = text;
+    m.style.display = 'block';
+    m.style.background = ok ? 'var(--mint)' : '#FCEBEB';
+    m.style.color = ok ? 'var(--green-dk)' : '#A32D2D';
+  }
+
+  async function loadAdminList() {
+    const el = document.getElementById('adminListContent');
+    const { data: admins, error } = await supabaseClient
+      .from('profiles').select('id, full_name, email').eq('is_admin', true).order('full_name', { ascending: true });
+    if (error) { el.innerHTML = '<p style="font-size:13px;color:var(--faint);">Could not load admins.</p>'; return; }
+    el.innerHTML = '<p style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;">CURRENT ADMINS</p>' +
+      (admins || []).map((a) => '<span class="status-pill status-Submitted" style="margin:0 6px 6px 0;display:inline-block;">' +
+        escHtml(a.full_name || a.email) + (a.id === currentAdminId ? ' (you)' : '') + '</span>').join('');
+  }
+
+  async function setAdminStatus(makeAdmin) {
+    document.getElementById('adminMgmtMsg').style.display = 'none';
+    const email = document.getElementById('adminEmail').value.trim().toLowerCase();
+    if (!email) return;
+
+    const { data: found, error: lookupError } = await supabaseClient
+      .from('profiles').select('id, full_name, email, is_admin').eq('email', email).maybeSingle();
+    if (lookupError || !found) {
+      adminMsg('No account found with that email. They need to sign up first.', false);
+      return;
+    }
+    if (found.id === currentAdminId && !makeAdmin) {
+      adminMsg('You cannot remove your own admin access. Ask another admin to do it.', false);
+      return;
+    }
+    if (makeAdmin && found.is_admin) { adminMsg(found.email + ' is already an admin.', true); return; }
+    if (!makeAdmin && !found.is_admin) { adminMsg(found.email + ' is not an admin.', false); return; }
+
+    const label = found.full_name ? found.full_name + ' (' + found.email + ')' : found.email;
+    const ask = makeAdmin
+      ? 'Give ' + label + ' FULL admin access? They will see all customer and invoice data.'
+      : 'Remove admin access from ' + label + '?';
+    if (!confirm(ask)) return;
+
+    const { data: updated, error: updateError } = await supabaseClient
+      .from('profiles').update({ is_admin: makeAdmin }).eq('id', found.id).select('id');
+    if (updateError) { adminMsg('Update failed: ' + updateError.message, false); return; }
+    if (!updated || updated.length === 0) { adminMsg('Update was blocked by a permissions rule.', false); return; }
+
+    document.getElementById('adminEmail').value = '';
+    adminMsg(label + (makeAdmin ? ' is now an admin.' : ' is no longer an admin.'), true);
+    await loadAdminList();
+  }
+
+  document.getElementById('grantAdminBtn').addEventListener('click', () => setAdminStatus(true));
+  document.getElementById('revokeAdminBtn').addEventListener('click', () => setAdminStatus(false));
 
   document.getElementById('grantStaffBtn').addEventListener('click', () => setStaffStatus(true));
   document.getElementById('revokeStaffBtn').addEventListener('click', () => setStaffStatus(false));
@@ -996,7 +1071,9 @@
     welcomeTitle.textContent = 'Admin dashboard';
     welcomeSub.textContent = 'Signed in as ' + session.user.email;
 
+    currentAdminId = session.user.id;
     await loadCustomers();
+    await loadAdminList();
     await loadStaffList();
     await loadInvoices();
     await loadFollowups();
