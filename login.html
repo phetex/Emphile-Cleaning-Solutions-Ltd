@@ -29,12 +29,13 @@
     <form id="loginForm">
       <div class="form-group">
         <label class="form-label">EMAIL ADDRESS</label>
-        <input type="email" class="form-input" id="email" required>
+        <input type="email" class="form-input" id="email" autocomplete="username" required>
       </div>
       <div class="form-group">
         <label class="form-label">PASSWORD</label>
-        <input type="password" class="form-input" id="password" required>
+        <input type="password" class="form-input" id="password" autocomplete="current-password" required>
       </div>
+      <label class="remember-row"><input type="checkbox" id="rememberMe" checked><span>Remember me on this device</span></label>
       <button type="submit" class="form-submit" id="submitBtn">Log in</button>
     </form>
     <p class="auth-switch"><a href="#" id="forgotLink">Forgot password?</a></p>
@@ -63,6 +64,15 @@
   const form = document.getElementById('loginForm');
   const errorAlert = document.getElementById('errorAlert');
   const submitBtn = document.getElementById('submitBtn');
+  const rememberBox = document.getElementById('rememberMe');
+  const REMEMBER_EMAIL_KEY = 'emphile_remembered_email';
+
+  // Pre-fill the email if the user chose to be remembered last time
+  try {
+    const savedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    if (savedEmail) document.getElementById('email').value = savedEmail;
+    rememberBox.checked = localStorage.getItem(REMEMBER_FLAG) !== '0';
+  } catch (e) { /* storage unavailable */ }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -73,6 +83,9 @@
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
+    // Must be set before signing in so the new session is stored the right way
+    try { localStorage.setItem(REMEMBER_FLAG, rememberBox.checked ? '1' : '0'); } catch (err) { /* ignore */ }
+
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
     if (error) {
@@ -82,6 +95,11 @@
       errorAlert.classList.add('show');
       return;
     }
+
+    try {
+      if (rememberBox.checked) localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+      else localStorage.removeItem(REMEMBER_EMAIL_KEY);
+    } catch (err) { /* ignore */ }
 
     const { data: profile } = await supabaseClient
       .from('profiles')
