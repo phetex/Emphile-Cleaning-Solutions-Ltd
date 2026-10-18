@@ -66,6 +66,17 @@ main { flex: 1; display: flex; align-items: center; justify-content: center; pad
   font-size: 14px; border-radius: 8px; outline: none;
 }
 .form-input:focus { border-color: var(--green); }
+.pw-wrap { position: relative; }
+.pw-wrap .form-input { padding-right: 48px; }
+.pw-toggle {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; border-radius: 8px; color: var(--muted); cursor: pointer; padding: 0;
+}
+.pw-toggle:hover { color: var(--green-dk); background: var(--mint); }
+.pw-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.pw-toggle svg { width: 20px; height: 20px; }
+.pw-wrap input::-ms-reveal, .pw-wrap input::-ms-clear { display: none; }
 .form-submit {
   width: 100%; background: var(--green-dk); color: #fff; border: none;
   padding: 14px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif;
