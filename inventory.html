@@ -685,6 +685,8 @@
     const text = $('iText').value.trim();
     importRecords = [];
     if (!text) { $('iPreview').innerHTML = 'Columns understood: name, category, unit, quantity, reorder_level, unit_cost, supplier, location, notes. <a href="#" id="iTemplate2" style="color:var(--green-dk);font-weight:600;">Download a blank template</a>'; wireTemplate('iTemplate2'); return; }
+    if (!/[
+]/.test(text) && /\.(csv|xlsx?|txt|tsv)$/i.test(text)) { $('iPreview').textContent = 'That is a file name, not the file contents. Clear this box and use the Choose File button above to pick the file.'; return; }
     const res = toRecords(parseDelimited(text));
     if (res.error) { $('iPreview').textContent = res.error; return; }
     if (res.records.length > 500) { $('iPreview').textContent = 'Too many rows (' + res.records.length + '). Import up to 500 items at a time.'; return; }
@@ -704,7 +706,7 @@
     const r = new FileReader(); r.onload = () => { $('iText').value = String(r.result); previewImport(); }; r.readAsText(f);
   });
   $('iGo').addEventListener('click', async () => {
-    if (!importRecords.length) { flash('Nothing to import yet. Choose a file or paste your rows.', false, 'impMsg'); return; }
+    if (!importRecords.length) { flash('Nothing to import yet. Use the Choose File button to pick your CSV file, or paste the rows (not the file name).', false, 'impMsg'); return; }
     const btn = $('iGo'); btn.disabled = true; btn.textContent = 'Importing…';
     let added = 0, skipped = 0, failed = 0;
     try {
