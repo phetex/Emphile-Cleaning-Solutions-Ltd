@@ -685,8 +685,7 @@
     const text = $('iText').value.trim();
     importRecords = [];
     if (!text) { $('iPreview').innerHTML = 'Columns understood: name, category, unit, quantity, reorder_level, unit_cost, supplier, location, notes. <a href="#" id="iTemplate2" style="color:var(--green-dk);font-weight:600;">Download a blank template</a>'; wireTemplate('iTemplate2'); return; }
-    if (!/[
-]/.test(text) && /\.(csv|xlsx?|txt|tsv)$/i.test(text)) { $('iPreview').textContent = 'That is a file name, not the file contents. Clear this box and use the Choose File button above to pick the file.'; return; }
+    if (text.indexOf(String.fromCharCode(10)) === -1 && /[.](csv|xlsx?|txt|tsv)$/i.test(text)) { $('iPreview').textContent = 'That is a file name, not the file contents. Clear this box and use the Choose File button above to pick the file.'; return; }
     const res = toRecords(parseDelimited(text));
     if (res.error) { $('iPreview').textContent = res.error; return; }
     if (res.records.length > 500) { $('iPreview').textContent = 'Too many rows (' + res.records.length + '). Import up to 500 items at a time.'; return; }
