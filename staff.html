@@ -111,6 +111,13 @@
   .slip .s-sign div { flex: 1; border-top: 1px solid #55665D; padding-top: 4px; font-size: 11.5px; color: #55665D; }
   .slip .s-foot { margin-top: 20px; font-size: 11px; color: #55665D; text-align: center; }
   .slip-wrap { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 16px; }
+  .nr-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+  .nr-row:first-child { border-top: none; }
+  .nr-row label { flex: 1; cursor: pointer; display: flex; flex-direction: column; }
+  .nr-row small { color: var(--muted); font-size: 12px; }
+  .nr-row.off { opacity: 0.55; }
+  .nr-row input { width: 18px; height: 18px; accent-color: var(--green-dk); }
+  .nr-row .amt { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
   #printArea { display: none; }
   @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, 1fr); } .modal .row2 { grid-template-columns: 1fr; } }
   @media (max-width: 520px) { .kpis { grid-template-columns: 1fr; } .modal { padding: 18px; } }
@@ -263,12 +270,15 @@
 <div class="modal-bg" id="newRunBg">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="nrTitle">
     <h2 id="nrTitle">New pay run</h2>
-    <p class="sub">Creates a draft with one line for each active staff member paid on that schedule. You can adjust every line before approving.</p>
+    <p class="sub">Tick the people to include. Creates a draft with one line for each. You can adjust every line before approving.</p>
     <div class="msg" id="nrMsg"></div>
     <div class="row2">
       <div class="fg full"><label class="form-label" for="nrFreq">Pay run for</label><select class="form-input" id="nrFreq"><option value="weekly">Staff paid weekly</option><option value="monthly">Staff paid monthly</option></select></div>
       <div class="fg"><label class="form-label" for="nrStart">Period start *</label><input class="form-input" id="nrStart" type="date"></div>
       <div class="fg"><label class="form-label" for="nrEnd">Period end *</label><input class="form-input" id="nrEnd" type="date"></div>
+      <div class="fg full"><label class="form-label">Who to pay</label>
+        <div id="nrPeople" style="border:1px solid var(--border-bright);border-radius:10px;padding:6px 12px;max-height:240px;overflow:auto;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:10px;flex-wrap:wrap;"><span><button class="btn-sm" id="nrAll" type="button">Select all</button> <button class="btn-sm" id="nrNone" type="button">Clear</button></span><span id="nrTotal" style="font-weight:700;color:var(--green-dk);"></span></div></div>
       <div class="fg full"><label class="form-label" for="nrNote">Note</label><input class="form-input" id="nrNote" maxlength="300"></div>
     </div>
     <div class="foot"><button class="btn-sm" id="nrCancel" type="button">Cancel</button><button class="btn-sm primary" id="nrGo" type="button">Create pay run</button></div>
@@ -529,16 +539,50 @@
     if (freq === 'monthly') return [ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)), ymd(new Date(now.getFullYear(), now.getMonth(), 0))];
     const mon = addD(mondayOf(now), -7); return [ymd(mon), ymd(addD(mon, 6))];
   }
-  function setDefaultPeriod() { const p = defaultPeriod($('nrFreq').value); $('nrStart').value = p[0]; $('nrEnd').value = p[1]; }
+  function setDefaultPeriod() { const p = defaultPeriod($('nrFreq').value); $('nrStart').value = p[0]; $('nrEnd').value = p[1]; renderPeople(true); }
+
+  // people already paid (in a live pay run) for any part of the chosen dates
+  function coveredIds() {
+    const a = $('nrStart').value, z = $('nrEnd').value, set = new Set();
+    if (!a || !z) return set;
+    const live = runs.filter((r) => r.status !== 'Void' && r.frequency === $('nrFreq').value && r.period_start <= z && r.period_end >= a).map((r) => r.id);
+    lines.forEach((l) => { if (live.includes(l.run_id)) set.add(l.employee_id); });
+    return set;
+  }
+  function eligible() { return employees.filter((e) => e.active && e.pay_type === $('nrFreq').value); }
+  function selectedIds() { return Array.from($('nrPeople').querySelectorAll('input[type=checkbox]:checked')).map((c) => c.value); }
+  function updateNrTotal() {
+    const ids = selectedIds(), tot = eligible().filter((e) => ids.includes(e.id)).reduce((x, e) => x + num(e.rate), 0);
+    $('nrTotal').textContent = ids.length + ' selected · ' + naira(tot) + ' basic';
+  }
+  function renderPeople(tickAll) {
+    const prev = new Set(selectedIds()), cov = coveredIds(), list = eligible();
+    if (!list.length) { $('nrPeople').innerHTML = '<p class="sub" style="margin:10px 0;">No active staff are paid ' + $('nrFreq').value + '. Add or edit people on the Staff tab.</p>'; updateNrTotal(); return; }
+    $('nrPeople').innerHTML = list.map((e) => {
+      const off = cov.has(e.id);
+      return '<div class="nr-row' + (off ? ' off' : '') + '"><input type="checkbox" id="nr_' + esc(e.id) + '" value="' + esc(e.id) + '"' + (off ? ' disabled' : (tickAll || prev.has(e.id) ? ' checked' : '')) + '><label for="nr_' + esc(e.id) + '">' + esc(e.full_name) + '<small>' + esc(e.role_title || '') + (off ? (e.role_title ? ' · ' : '') + 'already in a pay run for these dates' : '') + '</small></label><span class="amt">' + naira(e.rate) + '</span></div>';
+    }).join('');
+    updateNrTotal();
+  }
   $('nrFreq').addEventListener('change', setDefaultPeriod);
+  $('nrStart').addEventListener('change', () => renderPeople(true)); $('nrEnd').addEventListener('change', () => renderPeople(true));
+  $('nrPeople').addEventListener('change', updateNrTotal);
+  $('nrAll').addEventListener('click', () => { $('nrPeople').querySelectorAll('input[type=checkbox]:not(:disabled)').forEach((c) => { c.checked = true; }); updateNrTotal(); });
+  $('nrNone').addEventListener('click', () => { $('nrPeople').querySelectorAll('input[type=checkbox]').forEach((c) => { c.checked = false; }); updateNrTotal(); });
   $('newRun').addEventListener('click', () => { $('nrMsg').className = 'msg'; $('nrNote').value = ''; setDefaultPeriod(); $('newRunBg').classList.add('open'); });
   $('nrCancel').addEventListener('click', () => $('newRunBg').classList.remove('open'));
   $('nrGo').addEventListener('click', async () => {
     if (!$('nrStart').value || !$('nrEnd').value) return flash('Choose the period start and end.', false, 'nrMsg');
+    const ids = selectedIds();
+    if (!ids.length) return flash('Tick at least one person to pay.', false, 'nrMsg');
+    const everyone = eligible().filter((e) => !coveredIds().has(e.id)).map((e) => e.id);
+    const all = ids.length === everyone.length;     // everyone available is ticked: no list needed
+    const args = { p_start: $('nrStart').value, p_end: $('nrEnd').value, p_frequency: $('nrFreq').value, p_note: $('nrNote').value };
+    if (!all) args.p_employees = ids;
     const btn = $('nrGo'); btn.disabled = true; btn.textContent = 'Creating…';
-    const { data, error } = await supabaseClient.rpc('generate_pay_run', { p_start: $('nrStart').value, p_end: $('nrEnd').value, p_frequency: $('nrFreq').value, p_note: $('nrNote').value });
+    const { data, error } = await supabaseClient.rpc('generate_pay_run', args);
     btn.disabled = false; btn.textContent = 'Create pay run';
-    if (error) return flash(niceError(error), false, 'nrMsg');
+    if (error) return flash(/schema cache|PGRST202/i.test(error.message || '') ? 'Choosing individual people needs 07_payroll_select_staff.sql to be run in Supabase first. Tick everyone to continue without it.' : niceError(error), false, 'nrMsg');
     $('newRunBg').classList.remove('open'); await refresh(); openRun(data);
   });
   $('runBody').addEventListener('click', (ev) => { const tr = ev.target.closest('tr[data-run]'); if (tr) openRun(tr.getAttribute('data-run')); });
