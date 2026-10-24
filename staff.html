@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff &amp; Payroll | Emphile Cleaning Solutions Ltd</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+<style>
+  .st-wrap { max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px; width: 100%; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .kpi .k-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .kpi .k-value { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--green-dk); margin-top: 4px; }
+  .kpi .k-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-bright); margin-bottom: 18px; }
+  .tab { background: none; border: none; padding: 11px 18px; font: 600 14px 'Inter', sans-serif; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--green-dk); }
+  .tab.active { color: var(--green-dk); border-bottom-color: var(--green); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .toolbar .form-input { width: auto; padding: 10px 12px; font-size: 13.5px; border-radius: 8px; }
+  .toolbar .grow { flex: 1 1 200px; }
+  .toolbar .wk { font: 600 15px 'Inter', sans-serif; color: var(--green-dk); min-width: 220px; text-align: center; }
+  .btn-sm { background: #fff; color: var(--green-dk); border: 1px solid var(--border-bright); padding: 9px 16px; border-radius: 999px; font: 600 13px 'Inter', sans-serif; cursor: pointer; white-space: nowrap; }
+  .btn-sm:hover { border-color: var(--green); }
+  .btn-sm.primary { background: var(--green-dk); color: #fff; border-color: var(--green-dk); }
+  .btn-sm.primary:hover { background: var(--green); }
+  .btn-sm.danger { color: var(--danger); border-color: #E7B9B9; }
+  .btn-sm.danger:hover { background: var(--danger-bg); border-color: var(--danger); }
+  .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sheet { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: auto; }
+  table.list { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13.5px; }
+  table.list.wide { min-width: 820px; }
+  table.list thead th { background: var(--green-dk); color: #fff; text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; padding: 11px 12px; white-space: nowrap; }
+  table.list td { border-top: 1px solid var(--border); padding: 10px 12px; vertical-align: middle; }
+  table.list tbody tr:nth-child(even) td { background: #FAFDFB; }
+  table.list tfoot td { background: #F4FAF6; font-weight: 700; border-top: 2px solid var(--green-dk); }
+  table.list .r { text-align: right; font-variant-numeric: tabular-nums; }
+  table.list .sub { display: block; font-size: 12px; color: var(--muted); }
+  table.list tr.clk { cursor: pointer; }
+  table.list tr.clk:hover td { background: var(--mint); }
+  table.list tr.off td { opacity: 0.55; }
+  .pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+  .pill.Worked, .pill.Paid, .pill.Active { background: var(--mint); color: var(--green-dk); }
+  .pill.Scheduled, .pill.Approved { background: #E5EEFB; color: #1E4C8C; }
+  .pill.Absent { background: var(--danger-bg); color: var(--danger); }
+  .pill.Draft, .pill.Inactive { background: #ECEFED; color: var(--muted); }
+  .pill.Cancelled, .pill.Void { background: #ECEFED; color: #7a6a6a; text-decoration: line-through; }
+  /* rota */
+  table.rota { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 960px; font-size: 13px; table-layout: fixed; }
+  table.rota th { background: var(--green-dk); color: #fff; font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 10px 8px; text-align: center; }
+  table.rota th.emp { text-align: left; width: 170px; padding-left: 12px; }
+  table.rota th.today { background: var(--green); }
+  table.rota td { border-top: 1px solid var(--border); border-left: 1px solid var(--border); padding: 6px; vertical-align: top; height: 74px; }
+  table.rota td.emp { border-left: none; font-weight: 600; padding: 10px 12px; background: #FAFDFB; }
+  table.rota td.emp small { display: block; font-weight: 400; color: var(--muted); font-size: 11.5px; }
+  table.rota td.today { background: #F4FAF6; }
+  .chip { display: block; width: 100%; text-align: left; border: 1px solid var(--border-bright); border-radius: 8px; padding: 4px 7px; margin-bottom: 4px; font: 500 12px 'Inter', sans-serif; cursor: pointer; background: #fff; color: var(--ink); }
+  .chip:hover { border-color: var(--green); }
+  .chip b { display: block; font-weight: 700; }
+  .chip.Worked { background: var(--mint); border-color: #B7DEC6; }
+  .chip.Absent { background: var(--danger-bg); border-color: #E7B9B9; }
+  .chip.Cancelled { background: #F3F3F3; color: #888; text-decoration: line-through; }
+  .addcell { display: block; width: 100%; background: none; border: 1px dashed transparent; border-radius: 8px; color: var(--muted); font-size: 16px; cursor: pointer; padding: 0; line-height: 22px; opacity: 0; }
+  table.rota td:hover .addcell, .addcell:focus { opacity: 1; border-color: var(--border-bright); }
+  .msg { display: none; padding: 12px 16px; border-radius: 8px; font-size: 13.5px; margin-bottom: 14px; }
+  .msg.show { display: block; }
+  .msg.ok { background: var(--mint); color: var(--green-dk); }
+  .msg.bad { background: #FCEBEB; color: #A32D2D; }
+  .loading { padding: 40px; text-align: center; color: var(--muted); }
+  .muted-note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(11,70,48,0.45); display: none; align-items: flex-start; justify-content: center; padding: 5vh 16px; z-index: 500; overflow: auto; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 580px; padding: 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.3); }
+  .modal.wide { max-width: 1000px; }
+  .modal h2 { font-size: 21px; color: var(--green-dk); margin-bottom: 6px; }
+  .modal .sub { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; }
+  .modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal .full { grid-column: 1 / -1; }
+  .modal .foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .modal .fg { margin-bottom: 14px; }
+  .modal textarea.form-input { min-height: 64px; resize: vertical; }
+  .modal .chk { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  table.plines { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 820px; }
+  table.plines th { text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 6px; }
+  table.plines td { padding: 5px 6px; vertical-align: middle; border-top: 1px solid var(--border); }
+  table.plines .form-input { padding: 8px 9px; font-size: 13.5px; border-radius: 8px; text-align: right; }
+  table.plines .form-input.txt { text-align: left; }
+  table.plines .net { text-align: right; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.plines .net.neg { color: var(--danger); }
+  .x-btn { background: none; border: none; color: var(--danger); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px 8px; }
+  /* payslips */
+  .slip { color: #1a2a22; font-family: 'Inter', Arial, sans-serif; font-size: 13px; line-height: 1.45; padding: 4px; }
+  .slip .s-head { display: flex; justify-content: space-between; border-bottom: 3px solid #0B4630; padding-bottom: 12px; align-items: center; }
+  .slip .s-brand { display: flex; gap: 12px; align-items: center; }
+  .slip .s-mark { width: 44px; height: 44px; border-radius: 10px; background: #0B4630; color: #fff; font: 700 18px 'Fraunces', serif; display: flex; align-items: center; justify-content: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slip .s-co { font: 700 17px 'Fraunces', serif; color: #0B4630; }
+  .slip .s-small { font-size: 11.5px; color: #55665D; }
+  .slip h2 { font: 700 24px 'Fraunces', serif; color: #0B4630; letter-spacing: 0.04em; margin: 0; }
+  .slip .s-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin: 18px 0; }
+  .slip .s-meta h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #55665D; margin: 0; }
+  .slip table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .slip th { background: #0B4630; color: #fff; text-align: left; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slip td { padding: 9px 10px; border-bottom: 1px solid #D5E5DB; }
+  .slip .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .slip .s-net td { background: #E7F5EC; font-weight: 700; font-size: 15px; color: #0B4630; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slip .s-sign { display: flex; justify-content: space-between; gap: 40px; margin-top: 46px; }
+  .slip .s-sign div { flex: 1; border-top: 1px solid #55665D; padding-top: 4px; font-size: 11.5px; color: #55665D; }
+  .slip .s-foot { margin-top: 20px; font-size: 11px; color: #55665D; text-align: center; }
+  .slip-wrap { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 16px; }
+  #printArea { display: none; }
+  @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, 1fr); } .modal .row2 { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .kpis { grid-template-columns: 1fr; } .modal { padding: 18px; } }
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body > *:not(#printArea) { display: none !important; }
+    body { background: #fff !important; }
+    #printArea { display: block !important; }
+    #printArea .slip { page-break-after: always; break-after: page; }
+    #printArea .slip:last-child { page-break-after: auto; break-after: auto; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>STAFF</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="admin.html">Admin dashboard</a></li>
+    <li><a href="billing.html">Quotes &amp; invoices</a></li>
+    <li><a href="finance.html">Finance</a></li>
+  </ul>
+</nav>
+
+<div class="st-wrap">
+  <div class="portal-header">
+    <div>
+      <h1>Staff, rota &amp; payroll</h1>
+      <p id="whoLine">Loading…</p>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Log out</button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k-label">Active staff</div><div class="k-value" id="kStaff">–</div><div class="k-sub" id="kStaffSub">&nbsp;</div></div>
+    <div class="kpi"><div class="k-label">Shifts this week</div><div class="k-value" id="kShifts">–</div><div class="k-sub" id="kShiftsSub">&nbsp;</div></div>
+    <div class="kpi"><div class="k-label">Weekly payroll</div><div class="k-value" id="kWeekly">–</div><div class="k-sub">Staff paid weekly</div></div>
+    <div class="kpi"><div class="k-label">Monthly payroll</div><div class="k-value" id="kMonthly">–</div><div class="k-sub">Staff paid monthly</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="rota">Rota</button>
+    <button class="tab" data-tab="staff">Staff</button>
+    <button class="tab" data-tab="payroll">Payroll</button>
+  </div>
+
+  <!-- ROTA -->
+  <div id="panelRota">
+    <div class="toolbar">
+      <button class="btn-sm" id="wkPrev">‹ Previous</button>
+      <span class="wk" id="wkLabel"></span>
+      <button class="btn-sm" id="wkNext">Next ›</button>
+      <button class="btn-sm" id="wkToday">This week</button>
+      <span class="grow"></span>
+      <button class="btn-sm" id="copyWk">Copy last week</button>
+      <button class="btn-sm primary" id="addShift">+ Add shift</button>
+    </div>
+    <div class="sheet"><table class="rota" id="rota"></table></div>
+    <p class="muted-note">Click a shift to mark it worked, absent or cancelled. Hover a day and click + to add a shift. Absences show on the pay line when you create a pay run.</p>
+  </div>
+
+  <!-- STAFF -->
+  <div id="panelStaff" style="display:none;">
+    <div class="toolbar">
+      <input type="search" class="form-input grow" id="sq" placeholder="Search name, role or phone…">
+      <select class="form-input" id="sFilter"><option value="active">Active staff</option><option value="all">Everyone</option><option value="inactive">Inactive</option></select>
+      <button class="btn-sm primary" id="addStaff">+ Add staff</button>
+    </div>
+    <div class="sheet">
+      <table class="list wide">
+        <thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Paid</th><th class="r">Pay</th><th>Status</th></tr></thead>
+        <tbody id="staffBody"><tr><td class="loading" colspan="6">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="muted-note">Click a person to edit them. Staff who have been paid or rostered can’t be deleted. Set them to inactive instead.</p>
+  </div>
+
+  <!-- PAYROLL -->
+  <div id="panelPayroll" style="display:none;">
+    <div class="toolbar">
+      <button class="btn-sm primary" id="newRun">+ New pay run</button>
+    </div>
+    <div class="sheet">
+      <table class="list wide">
+        <thead><tr><th>Period</th><th>Paid</th><th class="r">Staff</th><th class="r">Total net pay</th><th>Status</th><th>Paid on</th></tr></thead>
+        <tbody id="runBody"><tr><td class="loading" colspan="6">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="muted-note">Marking a pay run as paid records the total as a “Salaries &amp; wages” expense in Finance. Statutory deductions such as tax or pension are not calculated here. Enter them as a deduction after checking with your accountant.</p>
+  </div>
+</div>
+
+<!-- Shift modal -->
+<div class="modal-bg" id="shiftBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shiftTitle">
+    <h2 id="shiftTitle">Add shift</h2>
+    <p class="sub" id="shiftSub"></p>
+    <div class="msg" id="shiftMsg"></div>
+    <div class="row2">
+      <div class="fg full"><label class="form-label" for="hEmp">Staff member *</label><select class="form-input" id="hEmp"></select></div>
+      <div class="fg"><label class="form-label" for="hDate">Date *</label><input class="form-input" id="hDate" type="date"></div>
+      <div class="fg"><label class="form-label" for="hSite">Site / client</label><input class="form-input" id="hSite" maxlength="160" placeholder="Where are they working?"></div>
+      <div class="fg"><label class="form-label" for="hStart">Start *</label><input class="form-input" id="hStart" type="time" value="08:00"></div>
+      <div class="fg"><label class="form-label" for="hEnd">End *</label><input class="form-input" id="hEnd" type="time" value="16:00"></div>
+      <div class="fg"><label class="form-label" for="hStatus">Status</label>
+        <select class="form-input" id="hStatus"><option>Scheduled</option><option>Worked</option><option>Absent</option><option>Cancelled</option></select></div>
+      <div class="fg" id="hHoursBox"><label class="form-label" for="hHours">Hours worked</label><input class="form-input" id="hHours" type="number" min="0" max="24" step="0.25" placeholder="Auto from times"></div>
+      <div class="fg full"><label class="form-label" for="hNote">Note</label><input class="form-input" id="hNote" maxlength="300"></div>
+    </div>
+    <div class="foot">
+      <button class="btn-sm danger" id="hDel" type="button" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn-sm" id="hCancel" type="button">Cancel</button>
+      <button class="btn-sm primary" id="hSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Staff modal -->
+<div class="modal-bg" id="empBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="empTitle">
+    <h2 id="empTitle">Add staff</h2>
+    <p class="sub">Pay rates and bank details are only visible to admins.</p>
+    <div class="msg" id="empMsg"></div>
+    <div class="row2">
+      <div class="fg full"><label class="form-label" for="mName">Full name *</label><input class="form-input" id="mName" maxlength="120"></div>
+      <div class="fg"><label class="form-label" for="mRole">Role</label><input class="form-input" id="mRole" maxlength="80" placeholder="e.g. Cleaner, Supervisor"></div>
+      <div class="fg"><label class="form-label" for="mPhone">Phone</label><input class="form-input" id="mPhone" maxlength="40"></div>
+      <div class="fg"><label class="form-label" for="mType">Paid</label><select class="form-input" id="mType"><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+      <div class="fg"><label class="form-label" for="mRate" id="mRateLabel">Pay per week (₦)</label><input class="form-input" id="mRate" type="number" min="0" step="0.01"></div>
+      <div class="fg"><label class="form-label" for="mStart">Start date</label><input class="form-input" id="mStart" type="date"></div>
+      <div class="fg"><label class="form-label" for="mProfile">Portal account (optional)</label><select class="form-input" id="mProfile"><option value="">None</option></select></div>
+      <div class="fg full"><label class="form-label" for="mBank">Bank details (bank, account name, account number)</label><input class="form-input" id="mBank" maxlength="300"></div>
+      <div class="fg full"><label class="form-label" for="mNotes">Notes</label><textarea class="form-input" id="mNotes" maxlength="1000"></textarea></div>
+      <div class="fg full"><label class="chk"><input type="checkbox" id="mActive" checked> Active (included in the rota and pay runs)</label></div>
+    </div>
+    <div class="foot">
+      <button class="btn-sm danger" id="mDel" type="button" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn-sm" id="mCancel" type="button">Cancel</button>
+      <button class="btn-sm primary" id="mSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- New pay run -->
+<div class="modal-bg" id="newRunBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="nrTitle">
+    <h2 id="nrTitle">New pay run</h2>
+    <p class="sub">Creates a draft with one line for each active staff member paid on that schedule. You can adjust every line before approving.</p>
+    <div class="msg" id="nrMsg"></div>
+    <div class="row2">
+      <div class="fg full"><label class="form-label" for="nrFreq">Pay run for</label><select class="form-input" id="nrFreq"><option value="weekly">Staff paid weekly</option><option value="monthly">Staff paid monthly</option></select></div>
+      <div class="fg"><label class="form-label" for="nrStart">Period start *</label><input class="form-input" id="nrStart" type="date"></div>
+      <div class="fg"><label class="form-label" for="nrEnd">Period end *</label><input class="form-input" id="nrEnd" type="date"></div>
+      <div class="fg full"><label class="form-label" for="nrNote">Note</label><input class="form-input" id="nrNote" maxlength="300"></div>
+    </div>
+    <div class="foot"><button class="btn-sm" id="nrCancel" type="button">Cancel</button><button class="btn-sm primary" id="nrGo" type="button">Create pay run</button></div>
+  </div>
+</div>
+
+<!-- Pay run detail -->
+<div class="modal-bg" id="runBg">
+  <div class="modal wide" role="dialog" aria-modal="true" aria-label="Pay run">
+    <h2 id="runTitle"></h2>
+    <p class="sub" id="runSub"></p>
+    <div class="msg" id="runMsg"></div>
+    <div style="overflow:auto;"><table class="plines"><thead id="plHead"></thead><tbody id="plBody"></tbody></table></div>
+    <div class="foot" id="runActs"></div>
+    <div class="slip-wrap" id="slipPreview" style="display:none;"></div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const COMPANY = { name: 'Emphile Cleaning Solutions Ltd', lines: ['2, Mustapha Close, Cement, Dopemu, Lagos', 'RC 9765524', 'Phone: 070 6709 8658 | Email: info@emphile.com'] };
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  let employees = [], shifts = [], runs = [], lines = [], portalStaff = [];
+  let tab = 'rota';
+  let weekStart = mondayOf(new Date());
+  let editShiftId = null, editEmpId = null, openRunId = null;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+  const r2 = (n) => Math.round((num(n) + Number.EPSILON) * 100) / 100;
+  const naira = (n) => (num(n) < 0 ? '-' : '') + '₦' + Math.abs(num(n)).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pad = (n) => String(n).padStart(2, '0');
+  const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const parse = (s) => new Date(s + 'T00:00:00');
+  const addD = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x; };
+  const fmtD = (s) => s ? parse(s).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  const fmtShort = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  const hm = (t) => String(t || '').slice(0, 5);
+  function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const dow = (x.getDay() + 6) % 7; x.setDate(x.getDate() - dow); return x; }
+
+  function flash(text, ok, targetId) {
+    const m = $(targetId || 'msg');
+    m.textContent = text; m.className = 'msg show ' + (ok ? 'ok' : 'bad');
+    if (!targetId && ok) setTimeout(() => { if (m.textContent === text) m.className = 'msg'; }, 6000);
+  }
+  function niceError(e) {
+    const t = (e && e.message) || 'Something went wrong.';
+    if (/row-level security|42501|only admins/i.test(t)) return 'You do not have permission to do that.';
+    if (/foreign key|RESTRICT/i.test(t)) return 'This person has shifts or pay history, so they cannot be deleted. Set them to inactive instead.';
+    if (/pay_lines_check|deductions/i.test(t)) return 'Deductions cannot be more than the pay for that line.';
+    if (/violates check constraint/i.test(t)) return 'One of the values is not allowed (check numbers are not negative and times are valid).';
+    return t;
+  }
+
+  // ---------- load ----------
+  async function loadAll() {
+    const [em, sh, pr, pl, pf] = await Promise.all([
+      supabaseClient.from('employees').select('*').order('full_name', { ascending: true }).limit(2000),
+      supabaseClient.from('shifts').select('*').order('shift_date', { ascending: true }).limit(20000),
+      supabaseClient.from('pay_runs').select('*').order('period_start', { ascending: false }).limit(2000),
+      supabaseClient.from('pay_lines').select('*').limit(20000),
+      supabaseClient.from('profiles').select('id, full_name, email').eq('is_staff', true),
+    ]);
+    if (em.error || sh.error || pr.error || pl.error) {
+      const t = '<tr><td colspan="6" class="loading">The staff and payroll tables have not been set up yet. Run <strong>03_staff_payroll_schema.sql</strong> in Supabase first.</td></tr>';
+      $('staffBody').innerHTML = t; $('runBody').innerHTML = t;
+      $('rota').innerHTML = '<tbody><tr><td class="loading" style="height:auto;">Not set up yet. Run 03_staff_payroll_schema.sql in Supabase first.</td></tr></tbody>';
+      return false;
+    }
+    employees = em.data || []; shifts = sh.data || []; runs = pr.data || []; lines = pl.data || []; portalStaff = pf.data || [];
+    return true;
+  }
+  async function refresh() { await loadAll(); renderAll(); }
+
+  // ---------- rendering ----------
+  const empById = (id) => employees.find((e) => e.id === id);
+  const runTotal = (id) => r2(lines.filter((l) => l.run_id === id).reduce((a, l) => a + num(l.net), 0));
+
+  function renderAll() { renderKpis(); renderRota(); renderStaff(); renderRuns(); }
+
+  function renderKpis() {
+    const act = employees.filter((e) => e.active);
+    $('kStaff').textContent = act.length;
+    const w = act.filter((e) => e.pay_type === 'weekly'), m = act.filter((e) => e.pay_type === 'monthly');
+    $('kStaffSub').textContent = w.length + ' weekly, ' + m.length + ' monthly';
+    const a = ymd(weekStart), b = ymd(addD(weekStart, 6));
+    const wk = shifts.filter((s) => s.shift_date >= a && s.shift_date <= b && s.status !== 'Cancelled');
+    $('kShifts').textContent = wk.length;
+    const absent = wk.filter((s) => s.status === 'Absent').length;
+    $('kShiftsSub').textContent = absent ? absent + ' absent' : 'Selected week';
+    $('kWeekly').textContent = naira(w.reduce((x, e) => x + num(e.rate), 0));
+    $('kMonthly').textContent = naira(m.reduce((x, e) => x + num(e.rate), 0));
+  }
+
+  function renderRota() {
+    const days = DAYS.map((_, i) => addD(weekStart, i)), today = ymd(new Date());
+    $('wkLabel').textContent = fmtShort(days[0]) + ' – ' + fmtShort(days[6]) + ' ' + days[6].getFullYear();
+    const act = employees.filter((e) => e.active || shifts.some((s) => s.employee_id === e.id && s.shift_date >= ymd(days[0]) && s.shift_date <= ymd(days[6])));
+    if (!act.length) { $('rota').innerHTML = '<tbody><tr><td class="loading" style="height:auto;">No staff yet. Add people on the Staff tab first.</td></tr></tbody>'; return; }
+    let h = '<thead><tr><th class="emp">Staff</th>' + days.map((d, i) => '<th class="' + (ymd(d) === today ? 'today' : '') + '">' + DAYS[i] + ' ' + pad(d.getDate()) + '</th>').join('') + '</tr></thead><tbody>';
+    act.forEach((e) => {
+      h += '<tr><td class="emp">' + esc(e.full_name) + '<small>' + esc(e.role_title || '') + (e.active ? '' : ' (inactive)') + '</small></td>';
+      days.forEach((d) => {
+        const ds = ymd(d);
+        const list = shifts.filter((s) => s.employee_id === e.id && s.shift_date === ds).sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
+        h += '<td class="' + (ds === today ? 'today' : '') + '">' + list.map((s) => '<button class="chip ' + s.status + '" data-shift="' + esc(s.id) + '"><b>' + hm(s.start_time) + '–' + hm(s.end_time) + '</b>' + esc(s.site || s.status) + '</button>').join('') +
+          '<button class="addcell" data-add-emp="' + esc(e.id) + '" data-add-date="' + ds + '" title="Add shift" aria-label="Add shift for ' + esc(e.full_name) + ' on ' + ds + '">+</button></td>';
+      });
+      h += '</tr>';
+    });
+    $('rota').innerHTML = h + '</tbody>';
+  }
+
+  function renderStaff() {
+    const q = $('sq').value.trim().toLowerCase(), f = $('sFilter').value;
+    const rows = employees.filter((e) => f === 'all' || (f === 'active' ? e.active : !e.active)).filter((e) => !q || [e.full_name, e.role_title, e.phone].join(' ').toLowerCase().includes(q));
+    $('staffBody').innerHTML = rows.length ? rows.map((e) => '<tr class="clk ' + (e.active ? '' : 'off') + '" data-emp="' + esc(e.id) + '"><td><strong>' + esc(e.full_name) + '</strong></td><td>' + esc(e.role_title || '') + '</td><td>' + esc(e.phone || '') + '</td><td>' + (e.pay_type === 'weekly' ? 'Weekly' : 'Monthly') + '</td><td class="r">' + naira(e.rate) + '<span class="sub">per ' + (e.pay_type === 'weekly' ? 'week' : 'month') + '</span></td><td><span class="pill ' + (e.active ? 'Active' : 'Inactive') + '">' + (e.active ? 'Active' : 'Inactive') + '</span></td></tr>').join('')
+      : '<tr><td colspan="6" class="loading">' + (employees.length ? 'No one matches.' : 'No staff yet. Click “Add staff” to start.') + '</td></tr>';
+  }
+
+  function renderRuns() {
+    $('runBody').innerHTML = runs.length ? runs.map((r) => {
+      const n = lines.filter((l) => l.run_id === r.id).length;
+      return '<tr class="clk" data-run="' + esc(r.id) + '"><td>' + fmtD(r.period_start) + ' to ' + fmtD(r.period_end) + (r.note ? '<span class="sub">' + esc(r.note) + '</span>' : '') + '</td><td>' + (r.frequency === 'weekly' ? 'Weekly' : 'Monthly') + '</td><td class="r">' + n + '</td><td class="r"><strong>' + naira(runTotal(r.id)) + '</strong></td><td><span class="pill ' + r.status + '">' + r.status + '</span></td><td>' + (fmtD(r.paid_on) || '–') + '</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="loading">No pay runs yet. Click “New pay run”.</td></tr>';
+  }
+
+  // ---------- rota actions ----------
+  function fillEmpSelect(selected) {
+    const list = employees.filter((e) => e.active || e.id === selected);
+    $('hEmp').innerHTML = list.map((e) => '<option value="' + esc(e.id) + '">' + esc(e.full_name) + '</option>').join('');
+    if (selected) $('hEmp').value = selected;
+  }
+  function syncHoursBox() { $('hHoursBox').style.display = $('hStatus').value === 'Worked' ? '' : 'none'; }
+  $('hStatus').addEventListener('change', syncHoursBox);
+
+  function openShift(s, empId, date) {
+    editShiftId = s ? s.id : null;
+    if (!s && !employees.some((e) => e.active)) return flash('Add staff first (Staff tab).', false);
+    $('shiftTitle').textContent = s ? 'Edit shift' : 'Add shift';
+    $('shiftSub').textContent = s ? 'Mark what happened, or change the details.' : 'Plan who is working where.';
+    fillEmpSelect(s ? s.employee_id : (empId || (employees.find((e) => e.active) || {}).id));
+    $('hDate').value = s ? s.shift_date : (date || ymd(new Date()));
+    $('hStart').value = s ? hm(s.start_time) : '08:00'; $('hEnd').value = s ? hm(s.end_time) : '16:00';
+    $('hSite').value = s ? (s.site || '') : ''; $('hNote').value = s ? (s.note || '') : '';
+    $('hStatus').value = s ? s.status : 'Scheduled'; $('hHours').value = s && s.hours_worked != null ? num(s.hours_worked) : '';
+    $('hDel').style.display = s ? '' : 'none'; $('shiftMsg').className = 'msg';
+    syncHoursBox();
+    $('shiftBg').classList.add('open');
+  }
+  const closeShift = () => { $('shiftBg').classList.remove('open'); editShiftId = null; };
+  $('hCancel').addEventListener('click', closeShift);
+  $('addShift').addEventListener('click', () => openShift(null, null, ymd(weekStart)));
+  $('rota').addEventListener('click', (ev) => {
+    const c = ev.target.closest('[data-shift]'); if (c) return openShift(shifts.find((s) => s.id === c.getAttribute('data-shift')));
+    const a = ev.target.closest('[data-add-emp]'); if (a) openShift(null, a.getAttribute('data-add-emp'), a.getAttribute('data-add-date'));
+  });
+  $('hSave').addEventListener('click', async () => {
+    if (!$('hEmp').value) return flash('Choose a staff member.', false, 'shiftMsg');
+    if (!$('hDate').value || !$('hStart').value || !$('hEnd').value) return flash('Enter the date, start and end times.', false, 'shiftMsg');
+    const status = $('hStatus').value;
+    const row = {
+      employee_id: $('hEmp').value, shift_date: $('hDate').value, start_time: $('hStart').value, end_time: $('hEnd').value,
+      site: $('hSite').value.trim() || null, note: $('hNote').value.trim() || null, status,
+      hours_worked: status === 'Worked' && $('hHours').value !== '' ? num($('hHours').value) : null,
+    };
+    const btn = $('hSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const res = editShiftId ? await supabaseClient.from('shifts').update(row).eq('id', editShiftId) : await supabaseClient.from('shifts').insert(row);
+    btn.disabled = false; btn.textContent = 'Save';
+    if (res.error) return flash(niceError(res.error), false, 'shiftMsg');
+    closeShift(); await refresh(); flash('Shift saved.', true);
+  });
+  $('hDel').addEventListener('click', async () => {
+    if (!editShiftId || !confirm('Delete this shift?')) return;
+    const { error } = await supabaseClient.from('shifts').delete().eq('id', editShiftId);
+    if (error) return flash(niceError(error), false, 'shiftMsg');
+    closeShift(); await refresh(); flash('Shift deleted.', true);
+  });
+  $('wkPrev').addEventListener('click', () => { weekStart = addD(weekStart, -7); renderKpis(); renderRota(); });
+  $('wkNext').addEventListener('click', () => { weekStart = addD(weekStart, 7); renderKpis(); renderRota(); });
+  $('wkToday').addEventListener('click', () => { weekStart = mondayOf(new Date()); renderKpis(); renderRota(); });
+  $('copyWk').addEventListener('click', async () => {
+    const prev = addD(weekStart, -7), a = ymd(prev), b = ymd(addD(prev, 6));
+    const src = shifts.filter((s) => s.shift_date >= a && s.shift_date <= b && s.status !== 'Cancelled' && (empById(s.employee_id) || {}).active);
+    if (!src.length) return flash('There are no shifts in the previous week to copy.', false);
+    if (!confirm('Copy ' + src.length + ' shift' + (src.length === 1 ? '' : 's') + ' from the previous week into this week?')) return;
+    let ok = 0, skipped = 0;
+    for (const s of src) {
+      const d = ymd(addD(parse(s.shift_date), 7));
+      const { error } = await supabaseClient.from('shifts').insert({ employee_id: s.employee_id, shift_date: d, start_time: s.start_time, end_time: s.end_time, site: s.site, note: s.note, status: 'Scheduled' });
+      if (error) skipped++; else ok++;
+    }
+    await refresh();
+    flash(ok + ' shift' + (ok === 1 ? '' : 's') + ' copied' + (skipped ? ', ' + skipped + ' skipped (already scheduled or overlapping).' : '.'), ok > 0);
+  });
+
+  // ---------- staff actions ----------
+  function syncRateLabel() { $('mRateLabel').textContent = 'Pay per ' + ($('mType').value === 'weekly' ? 'week' : 'month') + ' (₦)'; }
+  $('mType').addEventListener('change', syncRateLabel);
+  function openEmp(e) {
+    editEmpId = e ? e.id : null;
+    $('empTitle').textContent = e ? 'Edit ' + e.full_name : 'Add staff';
+    $('mProfile').innerHTML = '<option value="">None</option>' + portalStaff.map((p) => '<option value="' + esc(p.id) + '">' + esc(p.full_name || p.email) + '</option>').join('');
+    $('mName').value = e ? e.full_name : ''; $('mRole').value = e ? (e.role_title || '') : ''; $('mPhone').value = e ? (e.phone || '') : '';
+    $('mType').value = e ? e.pay_type : 'weekly'; $('mRate').value = e ? num(e.rate).toFixed(2) : ''; $('mStart').value = e ? (e.start_date || '') : '';
+    $('mProfile').value = e ? (e.profile_id || '') : ''; $('mBank').value = e ? (e.bank_details || '') : ''; $('mNotes').value = e ? (e.notes || '') : '';
+    $('mActive').checked = e ? !!e.active : true; $('mDel').style.display = e ? '' : 'none'; $('empMsg').className = 'msg';
+    syncRateLabel(); $('empBg').classList.add('open'); $('mName').focus();
+  }
+  const closeEmp = () => { $('empBg').classList.remove('open'); editEmpId = null; };
+  $('addStaff').addEventListener('click', () => openEmp(null));
+  $('mCancel').addEventListener('click', closeEmp);
+  $('staffBody').addEventListener('click', (ev) => { const tr = ev.target.closest('tr[data-emp]'); if (tr) openEmp(empById(tr.getAttribute('data-emp'))); });
+  $('sq').addEventListener('input', renderStaff); $('sFilter').addEventListener('change', renderStaff);
+  $('mSave').addEventListener('click', async () => {
+    if (!$('mName').value.trim()) return flash('Enter the person’s name.', false, 'empMsg');
+    if (num($('mRate').value) < 0) return flash('Pay cannot be negative.', false, 'empMsg');
+    const row = {
+      full_name: $('mName').value.trim(), role_title: $('mRole').value.trim() || null, phone: $('mPhone').value.trim() || null,
+      pay_type: $('mType').value, rate: r2($('mRate').value), start_date: $('mStart').value || null, profile_id: $('mProfile').value || null,
+      bank_details: $('mBank').value.trim() || null, notes: $('mNotes').value.trim() || null, active: $('mActive').checked,
+    };
+    const btn = $('mSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const res = editEmpId ? await supabaseClient.from('employees').update(row).eq('id', editEmpId) : await supabaseClient.from('employees').insert(row);
+    btn.disabled = false; btn.textContent = 'Save';
+    if (res.error) return flash(niceError(res.error), false, 'empMsg');
+    closeEmp(); await refresh(); flash('Staff record saved.', true);
+  });
+  $('mDel').addEventListener('click', async () => {
+    if (!editEmpId || !confirm('Delete this person? This only works if they have no shifts or pay history.')) return;
+    const { error } = await supabaseClient.from('employees').delete().eq('id', editEmpId);
+    if (error) return flash(niceError(error), false, 'empMsg');
+    closeEmp(); await refresh(); flash('Staff record deleted.', true);
+  });
+
+  // ---------- payroll ----------
+  function defaultPeriod(freq) {
+    const now = new Date();
+    if (freq === 'monthly') return [ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)), ymd(new Date(now.getFullYear(), now.getMonth(), 0))];
+    const mon = addD(mondayOf(now), -7); return [ymd(mon), ymd(addD(mon, 6))];
+  }
+  function setDefaultPeriod() { const p = defaultPeriod($('nrFreq').value); $('nrStart').value = p[0]; $('nrEnd').value = p[1]; }
+  $('nrFreq').addEventListener('change', setDefaultPeriod);
+  $('newRun').addEventListener('click', () => { $('nrMsg').className = 'msg'; $('nrNote').value = ''; setDefaultPeriod(); $('newRunBg').classList.add('open'); });
+  $('nrCancel').addEventListener('click', () => $('newRunBg').classList.remove('open'));
+  $('nrGo').addEventListener('click', async () => {
+    if (!$('nrStart').value || !$('nrEnd').value) return flash('Choose the period start and end.', false, 'nrMsg');
+    const btn = $('nrGo'); btn.disabled = true; btn.textContent = 'Creating…';
+    const { data, error } = await supabaseClient.rpc('generate_pay_run', { p_start: $('nrStart').value, p_end: $('nrEnd').value, p_frequency: $('nrFreq').value, p_note: $('nrNote').value });
+    btn.disabled = false; btn.textContent = 'Create pay run';
+    if (error) return flash(niceError(error), false, 'nrMsg');
+    $('newRunBg').classList.remove('open'); await refresh(); openRun(data);
+  });
+  $('runBody').addEventListener('click', (ev) => { const tr = ev.target.closest('tr[data-run]'); if (tr) openRun(tr.getAttribute('data-run')); });
+
+  function runLines(id) { return lines.filter((l) => l.run_id === id).sort((a, b) => String(a.employee_name).localeCompare(String(b.employee_name))); }
+  function openRun(id) {
+    const r = runs.find((x) => x.id === id); if (!r) return;
+    openRunId = id;
+    const draft = r.status === 'Draft', ls = runLines(id);
+    $('runTitle').innerHTML = (r.frequency === 'weekly' ? 'Weekly' : 'Monthly') + ' pay run <span class="pill ' + r.status + '" style="vertical-align:middle;margin-left:6px;">' + r.status + '</span>';
+    $('runSub').textContent = fmtD(r.period_start) + ' to ' + fmtD(r.period_end) + (r.note ? ' · ' + r.note : '') + (r.paid_on ? ' · paid ' + fmtD(r.paid_on) : '');
+    $('plHead').innerHTML = '<tr><th>Staff</th><th style="width:70px;text-align:right;">Periods</th><th style="text-align:right;">Basic</th><th style="width:120px;text-align:right;">Additions</th><th style="width:120px;text-align:right;">Deductions</th><th style="width:210px;">Note</th><th style="text-align:right;">Net pay</th><th style="width:34px;"></th></tr>';
+    $('plBody').innerHTML = ls.map((l) => '<tr data-line="' + esc(l.id) + '" data-rate="' + num(l.rate) + '" data-orig-net="' + num(l.net) + '"><td><strong>' + esc(l.employee_name) + '</strong><span class="sub" style="display:block;font-size:12px;color:var(--muted);">' + naira(l.rate) + ' per ' + (l.pay_type === 'weekly' ? 'week' : 'month') + '</span></td>' +
+      (draft ? '<td><input class="form-input l-units" type="number" min="0" step="0.01" value="' + num(l.units) + '"></td>' : '<td style="text-align:right;">' + num(l.units) + '</td>') +
+      '<td class="net l-basic">' + naira(l.basic) + '</td>' +
+      (draft ? '<td><input class="form-input l-add" type="number" min="0" step="0.01" value="' + num(l.additions) + '"></td><td><input class="form-input l-ded" type="number" min="0" step="0.01" value="' + num(l.deductions) + '"></td><td><input class="form-input txt l-note" maxlength="300" value="' + esc(l.note || '') + '"></td>'
+             : '<td style="text-align:right;">' + naira(l.additions) + '</td><td style="text-align:right;">' + naira(l.deductions) + '</td><td>' + esc(l.note || '') + '</td>') +
+      '<td class="net l-net">' + naira(l.net) + '</td>' + (draft ? '<td><button class="x-btn" data-rm="' + esc(l.id) + '" title="Remove from this pay run">×</button></td>' : '<td></td>') + '</tr>').join('') +
+      '<tr><td colspan="6"><strong>Total net pay</strong></td><td class="net" id="plTotal">' + naira(runTotal(id)) + '</td><td></td></tr>';
+    const b = ['<button class="btn-sm" data-ract="close">Close</button>'];
+    if (draft) { b.push('<button class="btn-sm danger" data-ract="void">Void</button>'); b.push('<button class="btn-sm" data-ract="save">Save changes</button>'); b.push('<button class="btn-sm primary" data-ract="approve">Approve</button>'); }
+    if (r.status === 'Approved') { b.push('<button class="btn-sm danger" data-ract="void">Void</button>'); b.push('<button class="btn-sm" data-ract="draft">Return to draft</button>'); b.push('<label style="font-size:13px;color:var(--muted);align-self:center;">Paid on <input class="form-input" id="paidOn" type="date" style="display:inline-block;width:auto;padding:8px 10px;" value="' + ymd(new Date()) + '"></label>'); b.push('<button class="btn-sm primary" data-ract="paid">Mark as paid</button>'); }
+    if (r.status !== 'Void' && ls.length) b.push('<button class="btn-sm" data-ract="print">Print payslips</button>');
+    $('runActs').innerHTML = b.join('');
+    $('slipPreview').style.display = 'none'; $('runMsg').className = 'msg';
+    $('runBg').classList.add('open');
+  }
+  const closeRun = () => { $('runBg').classList.remove('open'); openRunId = null; };
+
+  function recalcRow(tr) {
+    const rate = num(tr.getAttribute('data-rate'));
+    const u = tr.querySelector('.l-units'); if (!u) return;
+    const basic = r2(num(u.value) * rate), net = r2(basic + num(tr.querySelector('.l-add').value) - num(tr.querySelector('.l-ded').value));
+    tr.querySelector('.l-basic').textContent = naira(basic);
+    const n = tr.querySelector('.l-net'); n.textContent = naira(net); n.classList.toggle('neg', net < 0);
+    tr.setAttribute('data-net', net);
+    let tot = 0; $('plBody').querySelectorAll('tr[data-line]').forEach((x) => { tot += x.hasAttribute('data-net') ? num(x.getAttribute('data-net')) : num(x.getAttribute('data-orig-net')); });
+    $('plTotal').textContent = naira(tot);
+  }
+  $('plBody').addEventListener('input', (ev) => { const tr = ev.target.closest('tr[data-line]'); if (tr) recalcRow(tr); });
+  $('plBody').addEventListener('click', async (ev) => {
+    const b = ev.target.closest('[data-rm]'); if (!b) return;
+    if (!confirm('Remove this person from this pay run?')) return;
+    const { error } = await supabaseClient.rpc('remove_pay_line', { p_line: b.getAttribute('data-rm') });
+    if (error) return flash(niceError(error), false, 'runMsg');
+    await refresh(); openRun(openRunId);
+  });
+
+  async function saveLines() {
+    const rows = Array.from($('plBody').querySelectorAll('tr[data-line]'));
+    for (const tr of rows) {
+      const units = num(tr.querySelector('.l-units').value), add = r2(tr.querySelector('.l-add').value), ded = r2(tr.querySelector('.l-ded').value);
+      const net = r2(units * num(tr.getAttribute('data-rate')) + add - ded);
+      if (net < 0) { flash('Deductions cannot be more than the pay for ' + tr.querySelector('strong').textContent + '.', false, 'runMsg'); return false; }
+      const { error } = await supabaseClient.rpc('update_pay_line', { p_line: tr.getAttribute('data-line'), p_units: units, p_additions: add, p_deductions: ded, p_note: tr.querySelector('.l-note').value });
+      if (error) { flash(niceError(error), false, 'runMsg'); return false; }
+    }
+    return true;
+  }
+  async function setStatus(status, paidOn) {
+    const { error } = await supabaseClient.rpc('set_pay_run_status', { p_run: openRunId, p_status: status, p_paid_on: paidOn || null });
+    if (error) { flash(niceError(error), false, 'runMsg'); return false; }
+    return true;
+  }
+  $('runActs').addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-ract]'); if (!btn || !openRunId) return;
+    const act = btn.getAttribute('data-ract'), id = openRunId, r = runs.find((x) => x.id === id);
+    if (act === 'close') return closeRun();
+    if (act === 'print') return printSlips(runLines(id), r);
+    btn.disabled = true;
+    try {
+      if (act === 'save') { if (await saveLines()) { await refresh(); openRun(id); flash('Changes saved.', true, 'runMsg'); } }
+      else if (act === 'approve') {
+        if (!(await saveLines())) return;
+        if (!confirm('Approve this pay run for ' + naira(runTotal(id)) + '? You will no longer be able to edit the lines unless you return it to draft.')) return;
+        if (await setStatus('Approved')) { await refresh(); openRun(id); flash('Pay run approved.', true, 'runMsg'); }
+      }
+      else if (act === 'draft') { if (await setStatus('Draft')) { await refresh(); openRun(id); flash('Back to draft.', true, 'runMsg'); } }
+      else if (act === 'void') { if (confirm('Void this pay run? It stays on record but nothing is paid.') && await setStatus('Void')) { await refresh(); openRun(id); flash('Pay run voided.', true, 'runMsg'); } }
+      else if (act === 'paid') {
+        const when = $('paidOn').value || ymd(new Date());
+        if (!confirm('Mark ' + naira(runTotal(id)) + ' as paid on ' + fmtD(when) + '?\n\nThis records a “Salaries & wages” expense in Finance and cannot be undone.')) return;
+        if (await setStatus('Paid', when)) { await refresh(); openRun(id); flash('Marked as paid and recorded in Finance.', true, 'runMsg'); }
+      }
+    } finally { btn.disabled = false; }
+  });
+
+  // ---------- payslips ----------
+  function slipHtml(l, r) {
+    const e = empById(l.employee_id) || {};
+    return '<div class="slip"><div class="s-head"><div class="s-brand"><div class="s-mark">EC</div><div><div class="s-co">' + esc(COMPANY.name) + '</div>' + COMPANY.lines.map((x) => '<div class="s-small">' + esc(x) + '</div>').join('') + '</div></div><div style="text-align:right;"><h2>PAYSLIP</h2><div class="s-small">' + (r.frequency === 'weekly' ? 'Weekly' : 'Monthly') + ' pay</div></div></div>' +
+      '<div class="s-meta"><div><h4>Employee</h4><strong>' + esc(l.employee_name) + '</strong>' + (e.role_title ? '<div>' + esc(e.role_title) + '</div>' : '') + '</div>' +
+      '<div style="text-align:right;"><h4>Pay period</h4>' + fmtD(r.period_start) + ' to ' + fmtD(r.period_end) + (r.paid_on ? '<h4 style="margin-top:8px;">Paid on</h4>' + fmtD(r.paid_on) : '') + '</div></div>' +
+      '<table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead><tbody>' +
+      '<tr><td>Basic pay (' + naira(l.rate) + ' per ' + (l.pay_type === 'weekly' ? 'week' : 'month') + (num(l.units) !== 1 ? ' × ' + num(l.units) : '') + ')</td><td class="r">' + naira(l.basic) + '</td></tr>' +
+      (num(l.additions) > 0 ? '<tr><td>Additions (bonus / allowance / overtime)</td><td class="r">' + naira(l.additions) + '</td></tr>' : '') +
+      (num(l.deductions) > 0 ? '<tr><td>Deductions</td><td class="r">− ' + naira(l.deductions) + '</td></tr>' : '') +
+      '<tr class="s-net"><td>Net pay</td><td class="r">' + naira(l.net) + '</td></tr></tbody></table>' +
+      (l.note ? '<p style="margin-top:12px;"><span class="s-small">Note: </span>' + esc(l.note) + '</p>' : '') +
+      '<div class="s-sign"><div>Employee signature</div><div>Authorised by</div></div><div class="s-foot">This is a computer-generated payslip. Thank you for your work at Emphile Cleaning Solutions Ltd.</div></div>';
+  }
+  function printSlips(ls, r) {
+    $('printArea').innerHTML = ls.map((l) => slipHtml(l, r)).join('');
+    const old = document.title; document.title = 'Payslips ' + r.period_start + ' to ' + r.period_end;
+    window.print(); document.title = old;
+  }
+
+  // ---------- wiring ----------
+  function syncTab() {
+    document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.getAttribute('data-tab') === tab));
+    $('panelRota').style.display = tab === 'rota' ? '' : 'none';
+    $('panelStaff').style.display = tab === 'staff' ? '' : 'none';
+    $('panelPayroll').style.display = tab === 'payroll' ? '' : 'none';
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => { tab = b.getAttribute('data-tab'); syncTab(); }));
+  [['shiftBg', closeShift], ['empBg', closeEmp], ['newRunBg', () => $('newRunBg').classList.remove('open')], ['runBg', closeRun]].forEach(([id, fn]) => $(id).addEventListener('mousedown', (ev) => { if (ev.target === $(id) && id !== 'runBg') fn(); }));
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { closeShift(); closeEmp(); $('newRunBg').classList.remove('open'); } });
+
+  $('logoutBtn').addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.href = 'login.html'; });
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    const { data: profile } = await supabaseClient.from('profiles').select('full_name, is_admin, is_staff').eq('id', session.user.id).single();
+    if (!profile || !profile.is_admin) { window.location.href = (profile && profile.is_staff) ? 'staff-portal.html' : 'portal.html'; return; }
+    $('whoLine').textContent = 'Signed in as ' + session.user.email;
+    const ok = await loadAll();
+    syncTab();
+    if (ok) renderAll();
+  })();
+})();
+</script>
+</body>
+</html>
