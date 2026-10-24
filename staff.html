@@ -185,8 +185,8 @@
     </div>
     <div class="sheet">
       <table class="list wide">
-        <thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Paid</th><th class="r">Pay</th><th>Status</th></tr></thead>
-        <tbody id="staffBody"><tr><td class="loading" colspan="6">Loading…</td></tr></tbody>
+        <thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Paid</th><th class="r">Pay</th><th>Portal login</th><th>Status</th></tr></thead>
+        <tbody id="staffBody"><tr><td class="loading" colspan="7">Loading…</td></tr></tbody>
       </table>
     </div>
     <p class="muted-note">Click a person to edit them. Staff who have been paid or rostered can’t be deleted. Set them to inactive instead.</p>
@@ -245,7 +245,8 @@
       <div class="fg"><label class="form-label" for="mType">Paid</label><select class="form-input" id="mType"><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
       <div class="fg"><label class="form-label" for="mRate" id="mRateLabel">Pay per week (₦)</label><input class="form-input" id="mRate" type="number" min="0" step="0.01"></div>
       <div class="fg"><label class="form-label" for="mStart">Start date</label><input class="form-input" id="mStart" type="date"></div>
-      <div class="fg"><label class="form-label" for="mProfile">Portal account (optional)</label><select class="form-input" id="mProfile"><option value="">None</option></select></div>
+      <div class="fg full"><label class="form-label" for="mEmail">Login email (the email this person uses to log in to the staff portal)</label><input class="form-input" id="mEmail" type="email" maxlength="160" placeholder="name@example.com"></div>
+      <div class="fg full"><label class="form-label" for="mProfile">Portal account (optional, only needed if the email above differs from their login email)</label><select class="form-input" id="mProfile"><option value="">None</option></select></div>
       <div class="fg full"><label class="form-label" for="mBank">Bank details (bank, account name, account number)</label><input class="form-input" id="mBank" maxlength="300"></div>
       <div class="fg full"><label class="form-label" for="mNotes">Notes</label><textarea class="form-input" id="mNotes" maxlength="1000"></textarea></div>
       <div class="fg full"><label class="chk"><input type="checkbox" id="mActive" checked> Active (included in the rota and pay runs)</label></div>
@@ -324,6 +325,7 @@
   function niceError(e) {
     const t = (e && e.message) || 'Something went wrong.';
     if (/row-level security|42501|only admins/i.test(t)) return 'You do not have permission to do that.';
+    if (/'email' column|column .*email/i.test(t)) return 'The email link is not switched on yet. Run 05_staff_email_link.sql in Supabase first.';
     if (/foreign key|RESTRICT/i.test(t)) return 'This person has shifts or pay history, so they cannot be deleted. Set them to inactive instead.';
     if (/pay_lines_check|deductions/i.test(t)) return 'Deductions cannot be more than the pay for that line.';
     if (/violates check constraint/i.test(t)) return 'One of the values is not allowed (check numbers are not negative and times are valid).';
@@ -389,11 +391,18 @@
     $('rota').innerHTML = h + '</tbody>';
   }
 
+  function portalCell(e) {
+    const ps = portalStaff.find((p) => p.id === e.profile_id || (e.email && p.email && String(p.email).trim().toLowerCase() === String(e.email).trim().toLowerCase()));
+    if (ps) return '<span class="pill Active" title="Logs in as ' + esc(ps.email || '') + '">Linked</span>';
+    if (e.email || e.profile_id) return '<span class="pill Draft" title="No account marked as staff matches this email yet. Ask them to sign up, then add their email under Staff on the Admin dashboard.">Waiting for login</span>';
+    return '<span class="sub" style="display:inline;">No email set</span>';
+  }
+
   function renderStaff() {
     const q = $('sq').value.trim().toLowerCase(), f = $('sFilter').value;
     const rows = employees.filter((e) => f === 'all' || (f === 'active' ? e.active : !e.active)).filter((e) => !q || [e.full_name, e.role_title, e.phone].join(' ').toLowerCase().includes(q));
-    $('staffBody').innerHTML = rows.length ? rows.map((e) => '<tr class="clk ' + (e.active ? '' : 'off') + '" data-emp="' + esc(e.id) + '"><td><strong>' + esc(e.full_name) + '</strong></td><td>' + esc(e.role_title || '') + '</td><td>' + esc(e.phone || '') + '</td><td>' + (e.pay_type === 'weekly' ? 'Weekly' : 'Monthly') + '</td><td class="r">' + naira(e.rate) + '<span class="sub">per ' + (e.pay_type === 'weekly' ? 'week' : 'month') + '</span></td><td><span class="pill ' + (e.active ? 'Active' : 'Inactive') + '">' + (e.active ? 'Active' : 'Inactive') + '</span></td></tr>').join('')
-      : '<tr><td colspan="6" class="loading">' + (employees.length ? 'No one matches.' : 'No staff yet. Click “Add staff” to start.') + '</td></tr>';
+    $('staffBody').innerHTML = rows.length ? rows.map((e) => '<tr class="clk ' + (e.active ? '' : 'off') + '" data-emp="' + esc(e.id) + '"><td><strong>' + esc(e.full_name) + '</strong></td><td>' + esc(e.role_title || '') + '</td><td>' + esc(e.phone || '') + '</td><td>' + (e.pay_type === 'weekly' ? 'Weekly' : 'Monthly') + '</td><td class="r">' + naira(e.rate) + '<span class="sub">per ' + (e.pay_type === 'weekly' ? 'week' : 'month') + '</span></td><td>' + portalCell(e) + '</td><td><span class="pill ' + (e.active ? 'Active' : 'Inactive') + '">' + (e.active ? 'Active' : 'Inactive') + '</span></td></tr>').join('')
+      : '<tr><td colspan="7" class="loading">' + (employees.length ? 'No one matches.' : 'No staff yet. Click “Add staff” to start.') + '</td></tr>';
   }
 
   function renderRuns() {
@@ -479,7 +488,7 @@
     editEmpId = e ? e.id : null;
     $('empTitle').textContent = e ? 'Edit ' + e.full_name : 'Add staff';
     $('mProfile').innerHTML = '<option value="">None</option>' + portalStaff.map((p) => '<option value="' + esc(p.id) + '">' + esc(p.full_name || p.email) + '</option>').join('');
-    $('mName').value = e ? e.full_name : ''; $('mRole').value = e ? (e.role_title || '') : ''; $('mPhone').value = e ? (e.phone || '') : '';
+    $('mEmail').value = e ? (e.email || '') : ''; $('mName').value = e ? e.full_name : ''; $('mRole').value = e ? (e.role_title || '') : ''; $('mPhone').value = e ? (e.phone || '') : '';
     $('mType').value = e ? e.pay_type : 'weekly'; $('mRate').value = e ? num(e.rate).toFixed(2) : ''; $('mStart').value = e ? (e.start_date || '') : '';
     $('mProfile').value = e ? (e.profile_id || '') : ''; $('mBank').value = e ? (e.bank_details || '') : ''; $('mNotes').value = e ? (e.notes || '') : '';
     $('mActive').checked = e ? !!e.active : true; $('mDel').style.display = e ? '' : 'none'; $('empMsg').className = 'msg';
@@ -498,6 +507,9 @@
       pay_type: $('mType').value, rate: r2($('mRate').value), start_date: $('mStart').value || null, profile_id: $('mProfile').value || null,
       bank_details: $('mBank').value.trim() || null, notes: $('mNotes').value.trim() || null, active: $('mActive').checked,
     };
+    // Only send the email when the column exists (after 05_staff_email_link.sql) or when one was typed
+    const hasEmailCol = employees.some((x) => 'email' in x);
+    if (hasEmailCol || $('mEmail').value.trim()) row.email = $('mEmail').value.trim().toLowerCase() || null;
     const btn = $('mSave'); btn.disabled = true; btn.textContent = 'Saving…';
     const res = editEmpId ? await supabaseClient.from('employees').update(row).eq('id', editEmpId) : await supabaseClient.from('employees').insert(row);
     btn.disabled = false; btn.textContent = 'Save';
