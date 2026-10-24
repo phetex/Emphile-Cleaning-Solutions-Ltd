@@ -43,6 +43,27 @@
   .rpill.Absent { background: var(--danger-bg); color: var(--danger); }
   .rpill.Cancelled { background: #ECEFED; color: #7a6a6a; }
   .rota-shift.Cancelled .rota-time, .rota-shift.Cancelled .rota-site { text-decoration: line-through; color: var(--muted); }
+  .slip { color: #1a2a22; font-family: "Inter", Arial, sans-serif; font-size: 13px; line-height: 1.45; padding: 4px; }
+  .slip .s-head { display: flex; justify-content: space-between; border-bottom: 3px solid #0B4630; padding-bottom: 12px; align-items: center; }
+  .slip .s-brand { display: flex; gap: 12px; align-items: center; }
+  .slip .s-mark { width: 44px; height: 44px; border-radius: 10px; background: #0B4630; color: #fff; font: 700 18px "Fraunces", serif; display: flex; align-items: center; justify-content: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slip .s-co { font: 700 17px "Fraunces", serif; color: #0B4630; }
+  .slip .s-small { font-size: 11.5px; color: #55665D; }
+  .slip h2 { font: 700 24px "Fraunces", serif; color: #0B4630; letter-spacing: 0.04em; margin: 0; }
+  .slip .s-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin: 18px 0; }
+  .slip .s-meta h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #55665D; margin: 0; }
+  .slip table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .slip th { background: #0B4630; color: #fff; text-align: left; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slip td { padding: 9px 10px; border-bottom: 1px solid #D5E5DB; }
+  .slip .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .slip .s-net td { background: #E7F5EC; font-weight: 700; font-size: 15px; color: #0B4630; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slip .s-sign { display: flex; justify-content: space-between; gap: 40px; margin-top: 46px; }
+  .slip .s-sign div { flex: 1; border-top: 1px solid #55665D; padding-top: 4px; font-size: 11.5px; color: #55665D; }
+  .slip .s-foot { margin-top: 20px; font-size: 11px; color: #55665D; text-align: center; }
+  .pay-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .pay-row .pr-main { font-weight: 600; font-size: 14px; }
+  .pay-row .pr-sub { font-size: 12.5px; color: var(--muted); }
+  .pay-row .pr-net { font-weight: 700; font-size: 15px; color: var(--green-dk); white-space: nowrap; }
   #printArea { display: none; }
   @media print {
     body * { visibility: hidden; }
@@ -50,6 +71,12 @@
     #printArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
   }
 </style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0B4630">
+<link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Emphile">
+<meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
 <nav>
@@ -72,6 +99,10 @@
   <div class="admin-section" id="rotaSection">
     <h2>My rota</h2>
     <div id="rotaBody"><div class="loading-state" style="padding:24px;">Loading your rota…</div></div>
+  </div>
+  <div class="admin-section" id="paySection" style="display:none;">
+    <h2>My payslips</h2>
+    <div id="payBody"></div>
   </div>
   <div id="content">
     <div class="loading-state">Loading your assigned jobs…</div>
@@ -657,6 +688,49 @@
     render();
   })();
 })();
+</script>
+<script>
+(function () {
+  'use strict';
+  const COMPANY_LINES = ["2, Mustapha Close, Cement, Dopemu, Lagos", "RC 9765524", "Phone: 070 6709 8658 | Email: info@emphile.com"];
+  const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+  const naira = (n) => "₦" + num(n).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fd = (s) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "";
+  let slips = [], who = "";
+
+  function slipHtml(p) {
+    return '<div class="slip"><div class="s-head"><div class="s-brand"><div class="s-mark">EC</div><div><div class="s-co">Emphile Cleaning Solutions Ltd</div>' + COMPANY_LINES.map((x) => '<div class="s-small">' + esc(x) + "</div>").join("") + '</div></div><div style="text-align:right;"><h2>PAYSLIP</h2><div class="s-small">' + (p.frequency === "weekly" ? "Weekly" : "Monthly") + " pay</div></div></div>" +
+      '<div class="s-meta"><div><h4>Employee</h4><strong>' + esc(who) + '</strong></div><div style="text-align:right;"><h4>Pay period</h4>' + fd(p.period_start) + " to " + fd(p.period_end) + '<h4 style="margin-top:8px;">Paid on</h4>' + fd(p.paid_on) + "</div></div>" +
+      '<table><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead><tbody>' +
+      "<tr><td>Basic pay (" + naira(p.rate) + " per " + (p.pay_type === "weekly" ? "week" : "month") + (num(p.units) !== 1 ? " × " + num(p.units) : "") + ')</td><td class="r">' + naira(p.basic) + "</td></tr>" +
+      (num(p.additions) > 0 ? '<tr><td>Additions (bonus / allowance / overtime)</td><td class="r">' + naira(p.additions) + "</td></tr>" : "") +
+      (num(p.deductions) > 0 ? '<tr><td>Deductions</td><td class="r">− ' + naira(p.deductions) + "</td></tr>" : "") +
+      '<tr class="s-net"><td>Net pay</td><td class="r">' + naira(p.net) + "</td></tr></tbody></table>" +
+      (p.note ? '<p style="margin-top:12px;"><span class="s-small">Note: </span>' + esc(p.note) + "</p>" : "") +
+      '<div class="s-sign"><div>Employee signature</div><div>Authorised by</div></div><div class="s-foot">This is a computer-generated payslip. Thank you for your work at Emphile Cleaning Solutions Ltd.</div></div>';
+  }
+
+  async function load() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    const { data, error } = await supabaseClient.rpc("my_payslips");
+    if (error || !data || !data.length) return;   // stay hidden until there is something to show
+    const { data: prof } = await supabaseClient.from("profiles").select("full_name").eq("id", session.user.id).single();
+    who = (prof && prof.full_name) || session.user.email;
+    slips = data;
+    document.getElementById("payBody").innerHTML = slips.map((p, i) => '<div class="pay-row"><div><div class="pr-main">' + (p.frequency === "weekly" ? "Week: " : "Month: ") + fd(p.period_start) + " to " + fd(p.period_end) + '</div><div class="pr-sub">Paid ' + fd(p.paid_on) + '</div></div><div style="display:flex;align-items:center;gap:12px;"><span class="pr-net">' + naira(p.net) + '</span><button class="btn-print" data-slip="' + i + '">View / print</button></div></div>').join("");
+    document.getElementById("paySection").style.display = "";
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-slip]"); if (!b) return;
+    const p = slips[Number(b.getAttribute("data-slip"))]; if (!p) return;
+    document.getElementById("printArea").innerHTML = slipHtml(p);
+    window.print();
+  });
+  load();
+})();
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); }); }
 </script>
 </body>
 </html>
