@@ -22,6 +22,27 @@
     cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .btn-print:hover { border-color: var(--green); }
+  .rota-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .rota-bar .wk { font-weight: 700; color: var(--green-dk); font-size: 15px; }
+  .rota-btns { display: flex; gap: 8px; }
+  .next-shift { background: var(--mint); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 14px; color: var(--green-dk); }
+  .rota-day { display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); align-items: flex-start; }
+  .rota-day.today { background: #F4FAF6; margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 8px; }
+  .rota-date { min-width: 74px; font-weight: 700; color: var(--green-dk); font-size: 14px; }
+  .rota-date small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+  .rota-shifts { flex: 1; min-width: 0; }
+  .rota-shift { margin-bottom: 8px; }
+  .rota-shift:last-child { margin-bottom: 0; }
+  .rota-time { font-weight: 700; font-size: 15px; }
+  .rota-site { color: var(--ink); font-size: 14px; word-break: break-word; }
+  .rota-note { color: var(--muted); font-size: 13px; margin-top: 2px; word-break: break-word; }
+  .rota-off { color: var(--muted); font-size: 14px; }
+  .rpill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; margin-left: 8px; vertical-align: 1px; }
+  .rpill.Scheduled { background: #E5EEFB; color: #1E4C8C; }
+  .rpill.Worked { background: var(--mint); color: var(--green-dk); }
+  .rpill.Absent { background: var(--danger-bg); color: var(--danger); }
+  .rpill.Cancelled { background: #ECEFED; color: #7a6a6a; }
+  .rota-shift.Cancelled .rota-time, .rota-shift.Cancelled .rota-site { text-decoration: line-through; color: var(--muted); }
   #printArea { display: none; }
   @media print {
     body * { visibility: hidden; }
@@ -47,6 +68,10 @@
       <p id="welcomeSub">Loading your jobs…</p>
     </div>
     <button class="btn-logout" id="logoutBtn">Log out</button>
+  </div>
+  <div class="admin-section" id="rotaSection">
+    <h2>My rota</h2>
+    <div id="rotaBody"><div class="loading-state" style="padding:24px;">Loading your rota…</div></div>
   </div>
   <div id="content">
     <div class="loading-state">Loading your assigned jobs…</div>
@@ -575,6 +600,63 @@
     }
     window.print();
   }
+</script>
+<script>
+(function () {
+  'use strict';
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const pad = (n) => String(n).padStart(2, "0");
+  const ymd = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const addD = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const hm = (t) => String(t || "").slice(0, 5);
+  const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  const fmt = (d) => d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  let weekStart = mondayOf(new Date());
+  const body = document.getElementById("rotaBody");
+
+  async function render() {
+    const from = ymd(weekStart), to = ymd(addD(weekStart, 6));
+    const [wk, ahead, linked] = await Promise.all([
+      supabaseClient.rpc("my_rota", { p_from: from, p_to: to }),
+      supabaseClient.rpc("my_rota", { p_from: ymd(new Date()), p_to: ymd(addD(new Date(), 60)) }),
+      supabaseClient.rpc("i_am_rostered"),
+    ]);
+    if (wk.error || linked.error) {
+      body.innerHTML = '<div class="empty-state" style="padding:24px;">Your rota is not available yet. Please check again shortly.</div>';
+      return;
+    }
+    if (!linked.data) {
+      body.innerHTML = '<div class="empty-state" style="padding:24px;">Your rota has not been set up yet. Please ask the office to link your staff record to this account.</div>';
+      return;
+    }
+    const now = new Date(), todayS = ymd(now), nowT = pad(now.getHours()) + ":" + pad(now.getMinutes());
+    const next = (ahead.data || []).find((s) => (s.status === "Scheduled" || s.status === "Worked") && (s.shift_date > todayS || (s.shift_date === todayS && hm(s.end_time) >= nowT)));
+    let h = "";
+    if (next) {
+      const nd = new Date(next.shift_date + "T00:00:00");
+      h += '<div class="next-shift"><strong>Your next shift:</strong> ' + (next.shift_date === todayS ? "Today" : DAYS[(nd.getDay() + 6) % 7] + " " + fmt(nd)) + ", " + hm(next.start_time) + "–" + hm(next.end_time) + (next.site ? " at " + esc(next.site) : "") + "</div>";
+    }
+    h += '<div class="rota-bar"><span class="wk">' + fmt(weekStart) + " – " + fmt(addD(weekStart, 6)) + " " + addD(weekStart, 6).getFullYear() + '</span><span class="rota-btns"><button class="btn-print" id="rotaPrev">‹ Previous</button><button class="btn-print" id="rotaThis">This week</button><button class="btn-print" id="rotaNext">Next ›</button></span></div>';
+    const shifts = wk.data || [];
+    for (let i = 0; i < 7; i++) {
+      const d = addD(weekStart, i), ds = ymd(d);
+      const list = shifts.filter((s) => s.shift_date === ds);
+      h += '<div class="rota-day' + (ds === todayS ? " today" : "") + '"><div class="rota-date">' + DAYS[i].slice(0, 3) + " " + pad(d.getDate()) + "<small>" + (ds === todayS ? "Today" : d.toLocaleDateString("en-GB", { month: "short" })) + '</small></div><div class="rota-shifts">' +
+        (list.length ? list.map((s) => '<div class="rota-shift ' + esc(s.status) + '"><span class="rota-time">' + hm(s.start_time) + "–" + hm(s.end_time) + '</span><span class="rpill ' + esc(s.status) + '">' + esc(s.status) + "</span>" + (s.site ? '<div class="rota-site">' + esc(s.site) + "</div>" : "") + (s.note ? '<div class="rota-note">' + esc(s.note) + "</div>" : "") + "</div>").join("") : '<span class="rota-off">No shift</span>') + "</div></div>";
+    }
+    body.innerHTML = h;
+    document.getElementById("rotaPrev").onclick = () => { weekStart = addD(weekStart, -7); render(); };
+    document.getElementById("rotaNext").onclick = () => { weekStart = addD(weekStart, 7); render(); };
+    document.getElementById("rotaThis").onclick = () => { weekStart = mondayOf(new Date()); render(); };
+  }
+
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    render();
+  })();
+})();
 </script>
 </body>
 </html>
