@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quotes &amp; Invoices | Emphile Cleaning Solutions Ltd</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+<style>
+  .bill-wrap { max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px; width: 100%; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .kpi .k-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .kpi .k-value { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--green-dk); margin-top: 4px; }
+  .kpi.warn .k-value { color: #8a5a00; }
+  .kpi.bad .k-value { color: var(--danger); }
+  .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-bright); margin-bottom: 18px; }
+  .tab { background: none; border: none; padding: 11px 18px; font: 600 14px 'Inter', sans-serif; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--green-dk); }
+  .tab.active { color: var(--green-dk); border-bottom-color: var(--green); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .toolbar .form-input { width: auto; padding: 10px 12px; font-size: 13.5px; border-radius: 8px; }
+  .toolbar .form-input.grow { flex: 1 1 240px; }
+  .btn-sm { background: #fff; color: var(--green-dk); border: 1px solid var(--border-bright); padding: 9px 16px; border-radius: 999px; font: 600 13px 'Inter', sans-serif; cursor: pointer; white-space: nowrap; }
+  .btn-sm:hover { border-color: var(--green); }
+  .btn-sm.primary { background: var(--green-dk); color: #fff; border-color: var(--green-dk); }
+  .btn-sm.primary:hover { background: var(--green); }
+  .btn-sm.danger { color: var(--danger); border-color: #E7B9B9; }
+  .btn-sm.danger:hover { background: var(--danger-bg); border-color: var(--danger); }
+  .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sheet { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: auto; }
+  table.list { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; font-size: 13.5px; }
+  table.list thead th { background: var(--green-dk); color: #fff; text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; padding: 11px 12px; white-space: nowrap; }
+  table.list td { border-top: 1px solid var(--border); padding: 11px 12px; vertical-align: middle; }
+  table.list tbody tr:nth-child(even) td { background: #FAFDFB; }
+  table.list tbody tr { cursor: pointer; }
+  table.list tbody tr:hover td { background: var(--mint); }
+  table.list .r { text-align: right; font-variant-numeric: tabular-nums; }
+  table.list .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+  table.list .sub { display: block; font-size: 12px; color: var(--muted); }
+  .pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+  .pill.Paid, .pill.Accepted { background: var(--mint); color: var(--green-dk); }
+  .pill.Sent { background: #E5EEFB; color: #1E4C8C; }
+  .pill.Part-paid { background: #FFF6E0; color: #6b4c00; }
+  .pill.Draft { background: #ECEFED; color: var(--muted); }
+  .pill.Overdue, .pill.Declined { background: var(--danger-bg); color: var(--danger); }
+  .pill.Expired, .pill.Void { background: #ECEFED; color: #7a6a6a; text-decoration: line-through; }
+  .msg { display: none; padding: 12px 16px; border-radius: 8px; font-size: 13.5px; margin-bottom: 14px; }
+  .msg.show { display: block; }
+  .msg.ok { background: var(--mint); color: var(--green-dk); }
+  .msg.bad { background: #FCEBEB; color: #A32D2D; }
+  .loading { padding: 50px; text-align: center; color: var(--muted); }
+  .muted-note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+  .modal-bg { position: fixed; inset: 0; background: rgba(11,70,48,0.45); display: none; align-items: flex-start; justify-content: center; padding: 4vh 16px; z-index: 500; overflow: auto; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 760px; padding: 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.3); }
+  .modal.narrow { max-width: 480px; }
+  .modal h2 { font-size: 21px; color: var(--green-dk); margin-bottom: 6px; }
+  .modal .sub { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; }
+  .modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .modal .full { grid-column: 1 / -1; }
+  .modal .foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .modal .fg { margin-bottom: 14px; }
+  .modal textarea.form-input { min-height: 70px; resize: vertical; }
+  table.lines { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
+  table.lines th { text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 4px 6px; }
+  table.lines td { padding: 4px 6px; vertical-align: middle; }
+  table.lines .form-input { padding: 9px 10px; font-size: 13.5px; border-radius: 8px; }
+  table.lines .num { text-align: right; }
+  table.lines .ltot { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 13.5px; padding-right: 8px; }
+  .x-btn { background: none; border: none; color: var(--danger); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px 8px; }
+  .sumbox { margin-left: auto; width: 280px; font-size: 14px; }
+  .sumbox div { display: flex; justify-content: space-between; padding: 4px 0; }
+  .sumbox .grand { border-top: 2px solid var(--green-dk); margin-top: 4px; padding-top: 8px; font-weight: 700; font-size: 16px; color: var(--green-dk); }
+  .pay-list { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13.5px; }
+  .pay-list h3 { font-size: 14px; color: var(--green-dk); margin-bottom: 6px; }
+  .pay-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; align-items: center; }
+  .pay-row button { background: none; border: none; color: var(--danger); font-size: 12px; cursor: pointer; text-decoration: underline; }
+
+  /* The document itself (preview + print) */
+  .doc { color: #1a2a22; font-family: 'Inter', Arial, sans-serif; font-size: 13px; line-height: 1.45; }
+  .doc .d-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; border-bottom: 3px solid #0B4630; padding-bottom: 14px; }
+  .doc .d-brand { display: flex; gap: 12px; align-items: center; }
+  .doc .d-mark { width: 48px; height: 48px; border-radius: 10px; background: #0B4630; color: #fff; font: 700 20px 'Fraunces', serif; display: flex; align-items: center; justify-content: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc .d-co { font: 700 18px 'Fraunces', serif; color: #0B4630; }
+  .doc .d-small { font-size: 11.5px; color: #55665D; }
+  .doc .d-title { text-align: right; }
+  .doc .d-title h2 { font: 700 26px 'Fraunces', serif; color: #0B4630; letter-spacing: 0.04em; margin: 0; }
+  .doc .d-meta { display: flex; justify-content: space-between; gap: 20px; margin: 18px 0; }
+  .doc .d-meta h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #55665D; margin: 0 0 4px; }
+  .doc table.d-items { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .doc table.d-items th { background: #0B4630; color: #fff; text-align: left; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc table.d-items td { padding: 9px 10px; border-bottom: 1px solid #D5E5DB; vertical-align: top; }
+  .doc .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .doc .d-tot { margin: 14px 0 0 auto; width: 300px; }
+  .doc .d-tot div { display: flex; justify-content: space-between; padding: 4px 10px; }
+  .doc .d-tot .grand { background: #E7F5EC; font-weight: 700; font-size: 15px; color: #0B4630; border-top: 2px solid #0B4630; margin-top: 4px; padding: 8px 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc .d-block { margin-top: 18px; }
+  .doc .d-block h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #55665D; margin: 0 0 4px; }
+  .doc .d-block p { white-space: pre-wrap; margin: 0; }
+  .doc .d-foot { margin-top: 26px; padding-top: 10px; border-top: 1px solid #D5E5DB; font-size: 11.5px; color: #55665D; text-align: center; }
+  .doc .d-stamp { display: inline-block; border: 2px solid #0B4630; color: #0B4630; font-weight: 700; letter-spacing: 0.1em; padding: 2px 10px; border-radius: 4px; font-size: 12px; margin-top: 6px; }
+  .doc-wrap { border: 1px solid var(--border); border-radius: 12px; padding: 24px; background: #fff; overflow-x: auto; }
+  .doc .d-tot { max-width: 100%; }
+  @media (max-width: 640px) {
+    .modal { padding: 18px; }
+    .doc-wrap { padding: 14px; }
+    .doc .d-head { flex-wrap: wrap; }
+    .doc .d-title { text-align: left; }
+    .doc table.d-items { min-width: 460px; }
+    .doc .d-meta { flex-wrap: wrap; }
+    .sumbox { width: 100%; }
+  }
+  #printDoc { display: none; }
+
+  @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, 1fr); } .modal .row2, .modal .row3 { grid-template-columns: 1fr; } }
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body > *:not(#printDoc) { display: none !important; }
+    body { background: #fff !important; }
+    #printDoc { display: block !important; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>BILLING</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="admin.html">Admin dashboard</a></li>
+    <li><a href="inventory.html">Inventory</a></li>
+    <li><a href="index.html">Home</a></li>
+  </ul>
+</nav>
+
+<div class="bill-wrap">
+  <div class="portal-header">
+    <div>
+      <h1>Quotes &amp; invoices</h1>
+      <p id="whoLine">Loading…</p>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Log out</button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="kpis">
+    <div class="kpi warn"><div class="k-label">Outstanding</div><div class="k-value" id="kOut">–</div></div>
+    <div class="kpi bad"><div class="k-label">Overdue</div><div class="k-value" id="kOver">–</div></div>
+    <div class="kpi"><div class="k-label">Open quotes</div><div class="k-value" id="kQuotes">–</div></div>
+    <div class="kpi"><div class="k-label">Collected this month</div><div class="k-value" id="kMonth">–</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="invoice">Invoices</button>
+    <button class="tab" data-tab="quote">Quotes</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <div id="panelList">
+    <div class="toolbar">
+      <input type="search" class="form-input grow" id="q" placeholder="Search number or client…">
+      <select class="form-input" id="fState"><option value="">All statuses</option></select>
+      <button class="btn-sm primary" id="newBtn">+ New invoice</button>
+    </div>
+    <div class="sheet">
+      <table class="list">
+        <thead><tr id="listHead"></tr></thead>
+        <tbody id="listBody"><tr><td class="loading" colspan="9">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="muted-note" id="listNote"></p>
+  </div>
+
+  <div id="panelSettings" style="display:none;">
+    <div class="modal" style="max-width:640px;box-shadow:none;border:1px solid var(--border);">
+      <h2>Document settings</h2>
+      <p class="sub">These appear at the bottom of every quote and invoice you print.</p>
+      <div class="msg" id="setMsg"></div>
+      <div class="fg">
+        <label class="form-label" for="sPay">Payment details (bank name, account name, account number)</label>
+        <textarea class="form-input" id="sPay" maxlength="3000" placeholder="Leave empty to leave this section off your documents."></textarea>
+      </div>
+      <div class="fg">
+        <label class="form-label" for="sTerms">Default terms (pre-filled on every new quote or invoice)</label>
+        <textarea class="form-input" id="sTerms" maxlength="3000" placeholder="For example, your payment terms and validity period."></textarea>
+      </div>
+      <div class="foot"><button class="btn-sm primary" id="sSave">Save settings</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Editor -->
+<div class="modal-bg" id="editBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <h2 id="editTitle">New invoice</h2>
+    <p class="sub" id="editSub"></p>
+    <div class="msg" id="editMsg"></div>
+    <div class="fg">
+      <label class="form-label" for="eClient">Existing portal client (optional, fills in the details below)</label>
+      <select class="form-input" id="eClient"><option value="">New / not on the portal</option></select>
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="form-label" for="eName">Client name *</label><input class="form-input" id="eName" maxlength="160"></div>
+      <div class="fg"><label class="form-label" for="ePhone">Phone</label><input class="form-input" id="ePhone" maxlength="40"></div>
+      <div class="fg"><label class="form-label" for="eEmail">Email</label><input class="form-input" id="eEmail" type="email" maxlength="160"></div>
+      <div class="fg"><label class="form-label" for="eAddr">Address</label><input class="form-input" id="eAddr" maxlength="300"></div>
+    </div>
+    <div class="row3">
+      <div class="fg"><label class="form-label" for="eIssue">Issue date</label><input class="form-input" id="eIssue" type="date"></div>
+      <div class="fg"><label class="form-label" for="eDue" id="eDueLabel">Due date</label><input class="form-input" id="eDue" type="date"></div>
+      <div class="fg"><label class="form-label" for="eVat">VAT rate (%)</label><input class="form-input" id="eVat" type="number" min="0" max="100" step="0.01" value="0"></div>
+    </div>
+    <table class="lines">
+      <thead><tr><th>Description</th><th style="width:80px;">Qty</th><th style="width:130px;">Unit price (₦)</th><th style="width:120px;text-align:right;">Amount</th><th style="width:34px;"></th></tr></thead>
+      <tbody id="lineBody"></tbody>
+    </table>
+    <button class="btn-sm" id="addLine" type="button">+ Add line</button>
+    <div class="row2" style="margin-top:14px;">
+      <div>
+        <div class="fg"><label class="form-label" for="eDisc">Discount (₦)</label><input class="form-input" id="eDisc" type="number" min="0" step="0.01" value="0"></div>
+      </div>
+      <div class="sumbox" id="sumBox"></div>
+    </div>
+    <div class="fg"><label class="form-label" for="eNotes">Notes (shown on the document)</label><textarea class="form-input" id="eNotes" maxlength="2000"></textarea></div>
+    <div class="fg"><label class="form-label" for="eTerms">Terms</label><textarea class="form-input" id="eTerms" maxlength="3000"></textarea></div>
+    <div class="foot">
+      <button class="btn-sm" id="eCancel" type="button">Cancel</button>
+      <button class="btn-sm primary" id="eSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Preview / actions -->
+<div class="modal-bg" id="viewBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Document">
+    <div class="msg" id="viewMsg"></div>
+    <div class="doc-wrap"><div class="doc" id="viewDoc"></div></div>
+    <div class="pay-list" id="payList"></div>
+    <div class="foot" id="viewActs"></div>
+  </div>
+</div>
+
+<!-- Payment -->
+<div class="modal-bg" id="payBg">
+  <div class="modal narrow" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+    <h2 id="payTitle">Record payment</h2>
+    <p class="sub" id="paySub"></p>
+    <div class="msg" id="payMsg"></div>
+    <div class="row2">
+      <div class="fg"><label class="form-label" for="pAmt">Amount (₦) *</label><input class="form-input" id="pAmt" type="number" min="0" step="0.01"></div>
+      <div class="fg"><label class="form-label" for="pDate">Date received</label><input class="form-input" id="pDate" type="date"></div>
+      <div class="fg"><label class="form-label" for="pMethod">Method</label>
+        <select class="form-input" id="pMethod"><option>Bank transfer</option><option>Cash</option><option>Card / Paystack</option><option>POS</option><option>Cheque</option><option>Other</option></select></div>
+      <div class="fg"><label class="form-label" for="pRef">Reference</label><input class="form-input" id="pRef" maxlength="120" placeholder="Transfer reference"></div>
+    </div>
+    <div class="fg"><label class="form-label" for="pNote">Note</label><input class="form-input" id="pNote" maxlength="300"></div>
+    <div class="foot">
+      <button class="btn-sm" id="pCancel" type="button">Cancel</button>
+      <button class="btn-sm primary" id="pSave" type="button">Record payment</button>
+    </div>
+  </div>
+</div>
+
+<div id="printDoc" class="doc"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const COMPANY = {
+    name: 'Emphile Cleaning Solutions Ltd',
+    lines: ['2, Mustapha Close, Cement, Dopemu, Lagos', 'RC 9765524', 'Phone: 070 6709 8658 | Email: info@emphile.com', 'www.emphile.com'],
+  };
+  const QUOTE_STATES = ['Draft', 'Sent', 'Accepted', 'Declined', 'Expired', 'Void'];
+  const INVOICE_STATES = ['Draft', 'Sent', 'Part-paid', 'Overdue', 'Paid', 'Void'];
+
+  let docs = [], totals = {}, payments = [], clients = [], settings = {};
+  let tab = 'invoice';
+  let editing = null;      // document being edited (null = new)
+  let viewing = null;      // id of the document open in the preview
+  let busy = false;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+  const r2 = (n) => Math.round((num(n) + Number.EPSILON) * 100) / 100;
+  const naira = (n) => '₦' + num(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtD = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const addDays = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+
+  function flash(text, ok, targetId) {
+    const m = $(targetId || 'msg');
+    m.textContent = text;
+    m.className = 'msg show ' + (ok ? 'ok' : 'bad');
+    if (!targetId && ok) setTimeout(() => { if (m.textContent === text) m.className = 'msg'; }, 6000);
+  }
+  function niceError(e) {
+    const t = (e && e.message) || 'Something went wrong.';
+    if (/row-level security|42501|only admins/i.test(t)) return 'You do not have permission to do that.';
+    if (/violates check constraint/i.test(t)) return 'One of the values is not allowed (check numbers are not negative and text is not too long).';
+    return t;
+  }
+
+  // ---------- derived status ----------
+  function stateOf(d) {
+    if (d.status === 'Void') return 'Void';
+    const t = totals[d.id] || {};
+    if (d.kind === 'quote') {
+      if ((d.status === 'Sent' || d.status === 'Draft') && d.due_date && d.due_date < todayStr()) return 'Expired';
+      return d.status;
+    }
+    const total = num(t.total), bal = num(t.balance), paid = num(t.paid);
+    if (total > 0 && bal <= 0.004) return 'Paid';
+    if (d.status === 'Draft') return 'Draft';
+    if (d.due_date && d.due_date < todayStr()) return 'Overdue';
+    if (paid > 0) return 'Part-paid';
+    return 'Sent';
+  }
+
+  // ---------- load ----------
+  async function loadAll() {
+    const [dq, tq, pq, cq, sq] = await Promise.all([
+      supabaseClient.from('documents').select('*').order('created_at', { ascending: false }).limit(2000),
+      supabaseClient.from('document_totals').select('*').limit(2000),
+      supabaseClient.from('document_payments').select('*').order('paid_on', { ascending: false }).limit(5000),
+      supabaseClient.from('profiles').select('id, full_name, email, phone, address').order('full_name', { ascending: true }).limit(1000),
+      supabaseClient.from('app_settings').select('key, value'),
+    ]);
+    if (dq.error || tq.error || pq.error) {
+      $('listBody').innerHTML = '<tr><td colspan="9" class="loading">The billing tables have not been set up yet. Run <strong>01_billing_schema.sql</strong> in Supabase first.</td></tr>';
+      return false;
+    }
+    docs = dq.data || [];
+    totals = {}; (tq.data || []).forEach((t) => { totals[t.document_id] = t; });
+    payments = pq.data || [];
+    if (cq.error) {
+      const retry = await supabaseClient.from('profiles').select('id, full_name, email, phone').order('full_name', { ascending: true }).limit(1000);
+      clients = retry.data || [];
+    } else clients = cq.data || [];
+    settings = {}; (sq.data || []).forEach((s) => { settings[s.key] = s.value; });
+    return true;
+  }
+  async function reload(keepView) {
+    await loadAll();
+    renderKpis(); renderList();
+    if (keepView && viewing) openView(viewing, true);
+  }
+
+  // ---------- KPIs + list ----------
+  function renderKpis() {
+    let outstanding = 0, overdue = 0, openQuotes = 0, nq = 0;
+    docs.forEach((d) => {
+      const s = stateOf(d), t = totals[d.id] || {};
+      if (d.kind === 'invoice' && s !== 'Void' && s !== 'Draft') {
+        outstanding += Math.max(0, num(t.balance));
+        if (s === 'Overdue') overdue += Math.max(0, num(t.balance));
+      }
+      if (d.kind === 'quote' && (s === 'Draft' || s === 'Sent')) { openQuotes += num(t.total); nq++; }
+    });
+    const ym = todayStr().slice(0, 7);
+    const month = payments.filter((p) => String(p.paid_on).slice(0, 7) === ym).reduce((a, p) => a + num(p.amount), 0);
+    $('kOut').textContent = naira(outstanding);
+    $('kOver').textContent = naira(overdue);
+    $('kQuotes').textContent = naira(openQuotes) + (nq ? ' (' + nq + ')' : '');
+    $('kMonth').textContent = naira(month);
+  }
+
+  function renderFilter() {
+    const states = tab === 'quote' ? QUOTE_STATES : INVOICE_STATES;
+    const cur = $('fState').value;
+    $('fState').innerHTML = '<option value="">All statuses</option>' + states.map((s) => '<option>' + s + '</option>').join('');
+    if (states.includes(cur)) $('fState').value = cur;
+  }
+  function renderList() {
+    const isQ = tab === 'quote';
+    $('listHead').innerHTML = ['Number', 'Client', 'Issued', isQ ? 'Valid until' : 'Due', 'Total', isQ ? '' : 'Paid', isQ ? '' : 'Balance', 'Status']
+      .map((h, i) => (isQ && (i === 5 || i === 6)) ? '' : '<th class="' + ([4, 5, 6].includes(i) ? 'r' : '') + '">' + h + '</th>').join('');
+    const q = $('q').value.trim().toLowerCase(), st = $('fState').value;
+    const rows = docs.filter((d) => d.kind === tab).filter((d) => {
+      if (st && stateOf(d) !== st) return false;
+      if (q && !(String(d.number).toLowerCase().includes(q) || String(d.client_name).toLowerCase().includes(q))) return false;
+      return true;
+    });
+    if (!rows.length) {
+      $('listBody').innerHTML = '<tr><td colspan="9" class="loading">' + (docs.some((d) => d.kind === tab) ? 'Nothing matches your search.' : 'No ' + (isQ ? 'quotes' : 'invoices') + ' yet. Click “New ' + (isQ ? 'quote' : 'invoice') + '” to start.') + '</td></tr>';
+      $('listNote').textContent = '';
+      return;
+    }
+    $('listBody').innerHTML = rows.map((d) => {
+      const t = totals[d.id] || {}, s = stateOf(d);
+      return '<tr data-id="' + esc(d.id) + '">' +
+        '<td class="mono">' + esc(d.number) + '</td>' +
+        '<td>' + esc(d.client_name) + (d.client_email ? '<span class="sub">' + esc(d.client_email) + '</span>' : '') + '</td>' +
+        '<td>' + fmtD(d.issue_date) + '</td><td>' + (fmtD(d.due_date) || '–') + '</td>' +
+        '<td class="r">' + naira(t.total) + '</td>' +
+        (isQ ? '' : '<td class="r">' + naira(t.paid) + '</td><td class="r"><strong>' + naira(t.balance) + '</strong></td>') +
+        '<td><span class="pill ' + s + '">' + s + '</span></td></tr>';
+    }).join('');
+    $('listNote').textContent = rows.length + ' shown. Click a row to open it.';
+  }
+
+  // ---------- the printable document ----------
+  function docHtml(d, items, t, pays) {
+    const isQ = d.kind === 'quote';
+    const s = stateOf(d);
+    const rows = items.map((i, n) => '<tr><td>' + (n + 1) + '</td><td>' + esc(i.description) + '</td><td class="r">' + esc(num(i.qty)) + '</td><td class="r">' + naira(i.unit_price) + '</td><td class="r">' + naira(r2(num(i.qty) * num(i.unit_price))) + '</td></tr>').join('');
+    const paidRows = !isQ && num(t.paid) > 0
+      ? '<div><span>Paid</span><span>− ' + naira(t.paid) + '</span></div><div class="grand"><span>Balance due</span><span>' + naira(t.balance) + '</span></div>'
+      : '';
+    return '<div class="d-head">' +
+        '<div class="d-brand"><div class="d-mark">EC</div><div><div class="d-co">' + esc(COMPANY.name) + '</div>' +
+          COMPANY.lines.map((l) => '<div class="d-small">' + esc(l) + '</div>').join('') + '</div></div>' +
+        '<div class="d-title"><h2>' + (isQ ? 'QUOTATION' : 'INVOICE') + '</h2><div class="d-small">' + esc(d.number) + '</div>' +
+          (s === 'Paid' || s === 'Void' || s === 'Accepted' ? '<div class="d-stamp">' + s.toUpperCase() + '</div>' : '') + '</div>' +
+      '</div>' +
+      '<div class="d-meta"><div><h4>' + (isQ ? 'Prepared for' : 'Bill to') + '</h4><strong>' + esc(d.client_name) + '</strong>' +
+        (d.client_address ? '<div>' + esc(d.client_address) + '</div>' : '') + (d.client_phone ? '<div>' + esc(d.client_phone) + '</div>' : '') + (d.client_email ? '<div>' + esc(d.client_email) + '</div>' : '') + '</div>' +
+        '<div style="text-align:right;"><h4>Issued</h4><div>' + fmtD(d.issue_date) + '</div>' +
+        (d.due_date ? '<h4 style="margin-top:8px;">' + (isQ ? 'Valid until' : 'Payment due') + '</h4><div>' + fmtD(d.due_date) + '</div>' : '') + '</div></div>' +
+      '<table class="d-items"><thead><tr><th style="width:34px;">#</th><th>Description</th><th class="r">Qty</th><th class="r">Unit price</th><th class="r">Amount</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="d-tot"><div><span>Subtotal</span><span>' + naira(t.subtotal) + '</span></div>' +
+        (num(t.discount_applied) > 0 ? '<div><span>Discount</span><span>− ' + naira(t.discount_applied) + '</span></div>' : '') +
+        (num(d.vat_rate) > 0 ? '<div><span>VAT (' + esc(num(d.vat_rate)) + '%)</span><span>' + naira(t.vat) + '</span></div>' : '') +
+        '<div class="grand"><span>Total</span><span>' + naira(t.total) + '</span></div>' + paidRows + '</div>' +
+      (d.notes ? '<div class="d-block"><h4>Notes</h4><p>' + esc(d.notes) + '</p></div>' : '') +
+      (!isQ && settings.payment_details ? '<div class="d-block"><h4>How to pay</h4><p>' + esc(settings.payment_details) + '</p></div>' : '') +
+      (d.terms ? '<div class="d-block"><h4>Terms</h4><p>' + esc(d.terms) + '</p></div>' : '') +
+      '<div class="d-foot">Thank you for choosing Emphile Cleaning Solutions Ltd. We don’t just clean, we care.</div>';
+  }
+
+  async function fetchItems(id) {
+    const { data, error } = await supabaseClient.from('document_items').select('*').eq('document_id', id).order('position', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ---------- preview + actions ----------
+  function closeAll() { ['editBg', 'viewBg', 'payBg'].forEach((i) => $(i).classList.remove('open')); viewing = null; editing = null; }
+  async function openView(id, silent) {
+    const d = docs.find((x) => x.id === id);
+    if (!d) return;
+    let items;
+    try { items = await fetchItems(id); } catch (e) { flash(niceError(e), false); return; }
+    viewing = id;
+    const t = totals[id] || {}, pays = payments.filter((p) => p.document_id === id);
+    $('viewDoc').innerHTML = docHtml(d, items, t, pays);
+    if (!silent) $('viewMsg').className = 'msg';
+    $('payList').innerHTML = (d.kind === 'invoice' && pays.length)
+      ? '<h3>Payments received</h3>' + pays.map((p) => '<div class="pay-row"><span>' + fmtD(p.paid_on) + ' · ' + esc(p.method) + (p.reference ? ' · ' + esc(p.reference) : '') + '</span><span><strong>' + naira(p.amount) + '</strong> <button data-rmpay="' + esc(p.id) + '">remove</button></span></div>').join('')
+      : '';
+    const s = stateOf(d), hasPay = payments.some((p) => p.document_id === id);
+    const b = [];
+    b.push('<button class="btn-sm" data-act="close">Close</button>');
+    if (d.status !== 'Void' && !hasPay) b.push('<button class="btn-sm" data-act="edit">Edit</button>');
+    if (d.status === 'Draft' && !hasPay) b.push('<button class="btn-sm danger" data-act="delete">Delete</button>');
+    if (d.status !== 'Void' && !hasPay && d.status !== 'Draft') b.push('<button class="btn-sm danger" data-act="void">Void</button>');
+    if (d.kind === 'quote') {
+      if (d.status === 'Draft') b.push('<button class="btn-sm" data-act="status:Sent">Mark as sent</button>');
+      if (d.status === 'Sent' || d.status === 'Draft') { b.push('<button class="btn-sm" data-act="status:Declined">Declined</button>'); }
+      if (d.status !== 'Void' && d.status !== 'Declined' && !docs.some((x) => x.source_quote_id === id && x.status !== 'Void')) b.push('<button class="btn-sm primary" data-act="convert">Create invoice</button>');
+    } else {
+      if (d.status === 'Draft') b.push('<button class="btn-sm" data-act="status:Sent">Mark as sent</button>');
+      if (d.status !== 'Void' && s !== 'Paid') b.push('<button class="btn-sm primary" data-act="pay">Record payment</button>');
+    }
+    if (d.client_email) b.push('<button class="btn-sm" data-act="mail">Email</button>');
+    b.push('<button class="btn-sm primary" data-act="print">Print / Save PDF</button>');
+    $('viewActs').innerHTML = b.join('');
+    $('viewBg').classList.add('open');
+  }
+
+  async function rpc(name, args, okText) {
+    if (busy) return null;
+    busy = true;
+    try {
+      const { data, error } = await supabaseClient.rpc(name, args);
+      if (error) throw error;
+      if (okText) flash(okText, true, $('viewBg').classList.contains('open') ? 'viewMsg' : null);
+      return data;
+    } catch (e) {
+      flash(niceError(e), false, $('viewBg').classList.contains('open') ? 'viewMsg' : null);
+      return null;
+    } finally { busy = false; }
+  }
+
+  $('viewActs').addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('button[data-act]');
+    if (!btn || !viewing) return;
+    const act = btn.getAttribute('data-act'), id = viewing, d = docs.find((x) => x.id === id);
+    if (act === 'close') return closeAll();
+    if (act === 'print') {
+      const items = await fetchItems(id);
+      $('printDoc').innerHTML = docHtml(d, items, totals[id] || {}, []);
+      const old = document.title; document.title = d.number + ' - ' + d.client_name;
+      window.print(); document.title = old; return;
+    }
+    if (act === 'edit') return openEditor(d);
+    if (act === 'pay') return openPay(d);
+    if (act === 'mail') {
+      const t = totals[id] || {}, isQ = d.kind === 'quote';
+      const subject = (isQ ? 'Quotation ' : 'Invoice ') + d.number + ' from ' + COMPANY.name;
+      const body = 'Dear ' + d.client_name + ',\n\nPlease find attached ' + (isQ ? 'our quotation ' : 'invoice ') + d.number + ' for ' + naira(t.total) + '.\n\nKind regards,\n' + COMPANY.name + '\n070 6709 8658 | info@emphile.com';
+      window.location.href = 'mailto:' + encodeURIComponent(d.client_email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      return;
+    }
+    if (act === 'delete') {
+      if (!confirm('Delete draft ' + d.number + '? This cannot be undone.')) return;
+      const { error } = await supabaseClient.from('documents').delete().eq('id', id);
+      if (error) return flash(niceError(error), false, 'viewMsg');
+      closeAll(); await reload(); return flash(d.number + ' deleted.', true);
+    }
+    if (act === 'void') {
+      if (!confirm('Void ' + d.number + '? It stays on record but no longer counts.')) return;
+      const r = await rpc('set_document_status', { p_id: id, p_status: 'Void' }, d.number + ' voided.');
+      if (r) await reload(true); return;
+    }
+    if (act === 'convert') {
+      if (!confirm('Create an invoice from ' + d.number + '? The quote will be marked Accepted.')) return;
+      const nid = await rpc('convert_quote_to_invoice', { p_quote: id });
+      if (nid) { tab = 'invoice'; syncTab(); await reload(); await openView(nid); flash('Invoice created from ' + d.number + '.', true, 'viewMsg'); }
+      return;
+    }
+    if (act.indexOf('status:') === 0) {
+      const st = act.split(':')[1];
+      const r = await rpc('set_document_status', { p_id: id, p_status: st }, d.number + ' marked ' + st.toLowerCase() + '.');
+      if (r) await reload(true);
+    }
+  });
+
+  $('payList').addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button[data-rmpay]');
+    if (!b || !viewing) return;
+    if (!confirm('Remove this payment record?')) return;
+    const { error } = await supabaseClient.from('document_payments').delete().eq('id', b.getAttribute('data-rmpay'));
+    if (error) return flash(niceError(error), false, 'viewMsg');
+    await reload(true); flash('Payment removed.', true, 'viewMsg');
+  });
+
+  // ---------- payment modal ----------
+  function openPay(d) {
+    const t = totals[d.id] || {};
+    $('paySub').textContent = d.number + ' · ' + d.client_name + ' · balance ' + naira(t.balance);
+    $('pAmt').value = Math.max(0, num(t.balance)).toFixed(2);
+    $('pDate').value = todayStr(); $('pMethod').value = 'Bank transfer'; $('pRef').value = ''; $('pNote').value = '';
+    $('payMsg').className = 'msg';
+    $('payBg').classList.add('open');
+  }
+  $('pCancel').addEventListener('click', () => $('payBg').classList.remove('open'));
+  $('pSave').addEventListener('click', async () => {
+    const amt = r2($('pAmt').value);
+    if (!(amt > 0)) return flash('Enter the amount received.', false, 'payMsg');
+    const btn = $('pSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const { error } = await supabaseClient.from('document_payments').insert({
+      document_id: viewing, amount: amt, paid_on: $('pDate').value || todayStr(), method: $('pMethod').value,
+      reference: $('pRef').value.trim() || null, note: $('pNote').value.trim() || null,
+    });
+    btn.disabled = false; btn.textContent = 'Record payment';
+    if (error) return flash(niceError(error), false, 'payMsg');
+    $('payBg').classList.remove('open');
+    await reload(true); flash('Payment recorded.', true, 'viewMsg');
+  });
+
+  // ---------- editor ----------
+  function lineRow(it) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><input class="form-input l-desc" maxlength="300" placeholder="Service or item"></td>' +
+      '<td><input class="form-input num l-qty" type="number" min="0.01" step="0.01"></td>' +
+      '<td><input class="form-input num l-price" type="number" min="0" step="0.01"></td>' +
+      '<td class="ltot">₦0.00</td><td><button class="x-btn" type="button" title="Remove line">×</button></td>';
+    tr.querySelector('.l-desc').value = it.description || '';
+    tr.querySelector('.l-qty').value = it.qty != null ? it.qty : 1;
+    tr.querySelector('.l-price').value = it.unit_price != null ? it.unit_price : '';
+    return tr;
+  }
+  function readLines() {
+    return Array.from($('lineBody').querySelectorAll('tr')).map((tr) => ({
+      description: tr.querySelector('.l-desc').value.trim(),
+      qty: num(tr.querySelector('.l-qty').value),
+      unit_price: num(tr.querySelector('.l-price').value),
+    }));
+  }
+  function recalc() {
+    let sub = 0;
+    Array.from($('lineBody').querySelectorAll('tr')).forEach((tr) => {
+      const v = r2(num(tr.querySelector('.l-qty').value) * num(tr.querySelector('.l-price').value));
+      tr.querySelector('.ltot').textContent = naira(v); sub += v;
+    });
+    sub = r2(sub);
+    const disc = Math.min(r2($('eDisc').value), sub);
+    const vat = r2((sub - disc) * num($('eVat').value) / 100);
+    $('sumBox').innerHTML = '<div><span>Subtotal</span><span>' + naira(sub) + '</span></div>' +
+      (disc > 0 ? '<div><span>Discount</span><span>− ' + naira(disc) + '</span></div>' : '') +
+      (num($('eVat').value) > 0 ? '<div><span>VAT</span><span>' + naira(vat) + '</span></div>' : '') +
+      '<div class="grand"><span>Total</span><span>' + naira(sub - disc + vat) + '</span></div>';
+  }
+  $('lineBody').addEventListener('input', recalc);
+  $('eDisc').addEventListener('input', recalc);
+  $('eVat').addEventListener('input', recalc);
+  $('lineBody').addEventListener('click', (ev) => {
+    if (!ev.target.classList.contains('x-btn')) return;
+    if ($('lineBody').querySelectorAll('tr').length <= 1) return;
+    ev.target.closest('tr').remove(); recalc();
+  });
+  $('addLine').addEventListener('click', () => { $('lineBody').appendChild(lineRow({})); recalc(); $('lineBody').lastChild.querySelector('.l-desc').focus(); });
+
+  $('eClient').addEventListener('change', () => {
+    const c = clients.find((x) => x.id === $('eClient').value);
+    if (!c) return;
+    $('eName').value = c.full_name || c.email || '';
+    $('eEmail').value = c.email || ''; $('ePhone').value = c.phone || ''; $('eAddr').value = c.address || '';
+  });
+
+  async function openEditor(d) {
+    const isQ = (d ? d.kind : tab) === 'quote';
+    editing = d || null;
+    $('editTitle').textContent = d ? 'Edit ' + d.number : (isQ ? 'New quote' : 'New invoice');
+    $('editSub').textContent = isQ ? 'A quote can be turned into an invoice with one click once the client accepts.' : 'Create the invoice, then record payments against it as they arrive.';
+    $('eDueLabel').textContent = isQ ? 'Valid until' : 'Payment due';
+    $('eClient').innerHTML = '<option value="">New / not on the portal</option>' + clients.map((c) => '<option value="' + esc(c.id) + '">' + esc(c.full_name || c.email || c.id) + (c.email && c.full_name ? ' (' + esc(c.email) + ')' : '') + '</option>').join('');
+    $('editMsg').className = 'msg';
+    $('lineBody').innerHTML = '';
+    if (d) {
+      let items = [];
+      try { items = await fetchItems(d.id); } catch (e) { return flash(niceError(e), false); }
+      $('eClient').value = d.customer_id || '';
+      $('eName').value = d.client_name; $('eEmail').value = d.client_email || ''; $('ePhone').value = d.client_phone || ''; $('eAddr').value = d.client_address || '';
+      $('eIssue').value = d.issue_date; $('eDue').value = d.due_date || ''; $('eVat').value = num(d.vat_rate); $('eDisc').value = num(d.discount);
+      $('eNotes').value = d.notes || ''; $('eTerms').value = d.terms || '';
+      items.forEach((i) => $('lineBody').appendChild(lineRow(i)));
+    } else {
+      $('eClient').value = '';
+      ['eName', 'eEmail', 'ePhone', 'eAddr', 'eNotes'].forEach((i) => { $(i).value = ''; });
+      $('eIssue').value = todayStr(); $('eDue').value = addDays(isQ ? 30 : 14); $('eVat').value = 0; $('eDisc').value = 0;
+      $('eTerms').value = settings.default_terms || '';
+      $('lineBody').appendChild(lineRow({}));
+    }
+    recalc();
+    $('viewBg').classList.remove('open');
+    $('editBg').classList.add('open');
+    $('eName').focus();
+  }
+  $('eCancel').addEventListener('click', () => { const back = editing && editing.id; $('editBg').classList.remove('open'); editing = null; if (back) openView(back, true); });
+  $('newBtn').addEventListener('click', () => openEditor(null));
+
+  $('eSave').addEventListener('click', async () => {
+    const lines = readLines();
+    if (!$('eName').value.trim()) return flash('Enter the client name.', false, 'editMsg');
+    if (lines.some((l) => !l.description)) return flash('Every line needs a description (remove empty lines).', false, 'editMsg');
+    if (lines.some((l) => !(l.qty > 0))) return flash('Every line needs a quantity above zero.', false, 'editMsg');
+    if (num($('eVat').value) < 0 || num($('eVat').value) > 100) return flash('VAT must be between 0 and 100.', false, 'editMsg');
+    const kind = editing ? editing.kind : tab;
+    const doc = {
+      kind, client_name: $('eName').value.trim(), client_email: $('eEmail').value.trim(), client_phone: $('ePhone').value.trim(),
+      client_address: $('eAddr').value.trim(), customer_id: $('eClient').value || '', issue_date: $('eIssue').value, due_date: $('eDue').value,
+      vat_rate: num($('eVat').value), discount: r2($('eDisc').value), notes: $('eNotes').value, terms: $('eTerms').value,
+    };
+    const btn = $('eSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const id = await rpc('save_document', { p_id: editing ? editing.id : null, p_doc: doc, p_items: lines });
+    btn.disabled = false; btn.textContent = 'Save';
+    if (!id) { const m = $('msg'); if (m.classList.contains('bad')) { flash(m.textContent, false, 'editMsg'); m.className = 'msg'; } return; }
+    $('editBg').classList.remove('open'); editing = null;
+    await reload();
+    await openView(id);
+  });
+
+  // ---------- settings ----------
+  $('sSave').addEventListener('click', async () => {
+    const btn = $('sSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const { error } = await supabaseClient.from('app_settings').upsert([
+      { key: 'payment_details', value: $('sPay').value.trim() },
+      { key: 'default_terms', value: $('sTerms').value.trim() },
+    ], { onConflict: 'key' });
+    btn.disabled = false; btn.textContent = 'Save settings';
+    if (error) return flash(niceError(error), false, 'setMsg');
+    settings.payment_details = $('sPay').value.trim(); settings.default_terms = $('sTerms').value.trim();
+    flash('Settings saved.', true, 'setMsg');
+  });
+
+  // ---------- tabs, filters, start ----------
+  function syncTab() {
+    document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.getAttribute('data-tab') === tab));
+    const isSet = tab === 'settings';
+    $('panelList').style.display = isSet ? 'none' : '';
+    $('panelSettings').style.display = isSet ? '' : 'none';
+    if (isSet) { $('sPay').value = settings.payment_details || ''; $('sTerms').value = settings.default_terms || ''; $('setMsg').className = 'msg'; return; }
+    $('newBtn').textContent = '+ New ' + tab;
+    renderFilter(); renderList();
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => { tab = b.getAttribute('data-tab'); syncTab(); }));
+  $('q').addEventListener('input', renderList);
+  $('fState').addEventListener('change', renderList);
+  $('listBody').addEventListener('click', (ev) => { const tr = ev.target.closest('tr[data-id]'); if (tr) openView(tr.getAttribute('data-id')); });
+  document.querySelectorAll('.modal-bg').forEach((bg) => bg.addEventListener('mousedown', (ev) => { if (ev.target === bg && bg.id !== 'editBg') { if (bg.id === 'payBg') bg.classList.remove('open'); else closeAll(); } }));
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { if ($('payBg').classList.contains('open')) $('payBg').classList.remove('open'); else if (!$('editBg').classList.contains('open')) closeAll(); } });
+
+  $('logoutBtn').addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.href = 'login.html'; });
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    const { data: profile } = await supabaseClient.from('profiles').select('full_name, is_admin, is_staff').eq('id', session.user.id).single();
+    if (!profile || !profile.is_admin) { window.location.href = (profile && profile.is_staff) ? 'staff-portal.html' : 'portal.html'; return; }
+    $('whoLine').textContent = 'Signed in as ' + session.user.email;
+    const ok = await loadAll();
+    renderKpis(); syncTab();
+    if (!ok) { $('kOut').textContent = $('kOver').textContent = $('kQuotes').textContent = $('kMonth').textContent = '–'; }
+  })();
+})();
+</script>
+</body>
+</html>
