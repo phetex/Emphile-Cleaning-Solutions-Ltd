@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance &amp; Reports | Emphile Cleaning Solutions Ltd</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/portal.css">
+<style>
+  .fin-wrap { max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px; width: 100%; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .kpi .k-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .kpi .k-value { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--green-dk); margin-top: 4px; }
+  .kpi .k-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .kpi.warn .k-value { color: #8a5a00; }
+  .kpi.bad .k-value { color: var(--danger); }
+  .periodbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+  .periodbar .form-input { width: auto; padding: 10px 12px; font-size: 13.5px; border-radius: 8px; }
+  .periodbar .lbl { font-size: 13px; color: var(--muted); }
+  .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-bright); margin-bottom: 18px; }
+  .tab { background: none; border: none; padding: 11px 18px; font: 600 14px 'Inter', sans-serif; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--green-dk); }
+  .tab.active { color: var(--green-dk); border-bottom-color: var(--green); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .toolbar .form-input { width: auto; padding: 10px 12px; font-size: 13.5px; border-radius: 8px; }
+  .toolbar .form-input.grow { flex: 1 1 240px; }
+  .btn-sm { background: #fff; color: var(--green-dk); border: 1px solid var(--border-bright); padding: 9px 16px; border-radius: 999px; font: 600 13px 'Inter', sans-serif; cursor: pointer; white-space: nowrap; }
+  .btn-sm:hover { border-color: var(--green); }
+  .btn-sm.primary { background: var(--green-dk); color: #fff; border-color: var(--green-dk); }
+  .btn-sm.primary:hover { background: var(--green); }
+  .btn-sm.danger { color: var(--danger); border-color: #E7B9B9; }
+  .btn-sm.danger:hover { background: var(--danger-bg); border-color: var(--danger); }
+  .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; margin-bottom: 18px; }
+  .card h3 { font-size: 16px; color: var(--green-dk); margin-bottom: 4px; }
+  .card .hint { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .sheet { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: auto; }
+  table.list { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13.5px; }
+  table.list.wide { min-width: 860px; }
+  table.list thead th { background: var(--green-dk); color: #fff; text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; padding: 11px 12px; white-space: nowrap; }
+  table.list td { border-top: 1px solid var(--border); padding: 10px 12px; vertical-align: middle; }
+  table.list tbody tr:nth-child(even) td { background: #FAFDFB; }
+  table.list tfoot td { background: #F4FAF6; font-weight: 700; border-top: 2px solid var(--green-dk); }
+  table.list .r { text-align: right; font-variant-numeric: tabular-nums; }
+  table.list .sub { display: block; font-size: 12px; color: var(--muted); }
+  table.list tr.clk { cursor: pointer; }
+  table.list tr.clk:hover td { background: var(--mint); }
+  .bars .brow { display: grid; grid-template-columns: 190px 1fr 120px; gap: 10px; align-items: center; padding: 5px 0; font-size: 13.5px; }
+  .bars .track { background: #EEF5F0; border-radius: 6px; height: 14px; overflow: hidden; }
+  .bars .fill { height: 100%; background: var(--green); border-radius: 6px; }
+  .bars .fill.exp { background: #B5772A; }
+  .bars .amt { text-align: right; font-variant-numeric: tabular-nums; }
+  .bars .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend { display: flex; gap: 18px; font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  #chart svg { width: 100%; height: auto; display: block; }
+  .msg { display: none; padding: 12px 16px; border-radius: 8px; font-size: 13.5px; margin-bottom: 14px; }
+  .msg.show { display: block; }
+  .msg.ok { background: var(--mint); color: var(--green-dk); }
+  .msg.bad { background: #FCEBEB; color: #A32D2D; }
+  .loading { padding: 40px; text-align: center; color: var(--muted); }
+  .muted-note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(11,70,48,0.45); display: none; align-items: flex-start; justify-content: center; padding: 6vh 16px; z-index: 500; overflow: auto; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 560px; padding: 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.3); }
+  .modal h2 { font-size: 21px; color: var(--green-dk); margin-bottom: 6px; }
+  .modal .sub { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; }
+  .modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal .full { grid-column: 1 / -1; }
+  .modal .foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .modal .fg { margin-bottom: 14px; }
+  #printHead { display: none; }
+  @media (max-width: 900px) { .kpis, .grid2 { grid-template-columns: repeat(2, 1fr); } .grid2 { grid-template-columns: 1fr; } .modal .row2 { grid-template-columns: 1fr; } .bars .brow { grid-template-columns: 120px 1fr 100px; } }
+  @media (max-width: 520px) { .kpis { grid-template-columns: 1fr; } }
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    nav, .portal-header, .tabs, .toolbar, .periodbar, .btn-sm, .modal-bg, .msg, .muted-note { display: none !important; }
+    body { background: #fff !important; }
+    .fin-wrap { padding: 0; max-width: none; }
+    #printHead { display: block; margin-bottom: 14px; border-bottom: 3px solid #0B4630; padding-bottom: 8px; }
+    #printHead h1 { font-size: 20px; color: #0B4630; margin: 0; }
+    #printHead p { font-size: 12px; color: #55665D; margin: 2px 0 0; }
+    .kpi, .card, .sheet { break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .grid2 { grid-template-columns: 1fr 1fr; }
+    .kpis { grid-template-columns: repeat(4, 1fr); }
+    .sheet { overflow: visible; }
+    table.list.wide { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">EC</div>
+    <span class="nav-logo-text">Emphile<small>FINANCE</small></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="admin.html">Admin dashboard</a></li>
+    <li><a href="billing.html">Quotes &amp; invoices</a></li>
+    <li><a href="inventory.html">Inventory</a></li>
+  </ul>
+</nav>
+
+<div class="fin-wrap">
+  <div class="portal-header">
+    <div>
+      <h1>Finance &amp; reports</h1>
+      <p id="whoLine">Loading…</p>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Log out</button>
+  </div>
+
+  <div id="printHead"><h1>Emphile Cleaning Solutions Ltd: Finance report</h1><p id="printSub"></p></div>
+  <div class="msg" id="msg"></div>
+
+  <div class="periodbar">
+    <span class="lbl">Period</span>
+    <select class="form-input" id="period">
+      <option value="month">This month</option>
+      <option value="lastmonth">Last month</option>
+      <option value="quarter">This quarter</option>
+      <option value="year">This year</option>
+      <option value="lastyear">Last year</option>
+      <option value="all">All time</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <span id="customRange" style="display:none;"><input class="form-input" type="date" id="pFrom"> <span class="lbl">to</span> <input class="form-input" type="date" id="pTo"></span>
+    <span class="lbl" id="periodLabel"></span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k-label">Income received</div><div class="k-value" id="kInc">–</div><div class="k-sub">Payments on invoices</div></div>
+    <div class="kpi"><div class="k-label">Expenses</div><div class="k-value" id="kExp">–</div><div class="k-sub" id="kExpSub">&nbsp;</div></div>
+    <div class="kpi" id="kNetBox"><div class="k-label">Net profit</div><div class="k-value" id="kNet">–</div><div class="k-sub" id="kMargin">&nbsp;</div></div>
+    <div class="kpi warn"><div class="k-label">Owed to you now</div><div class="k-value" id="kRecv">–</div><div class="k-sub" id="kRecvSub">&nbsp;</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="expenses">Expenses</button>
+    <button class="tab" data-tab="reports">Reports</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="panelOverview">
+    <div class="card">
+      <h3>Last 12 months</h3>
+      <p class="hint">Money received compared with money spent, month by month.</p>
+      <div class="legend"><span><i style="background:var(--green)"></i>Income received</span><span><i style="background:#B5772A"></i>Expenses</span></div>
+      <div id="chart"></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Where the money went</h3><p class="hint">Expenses by category for the selected period.</p><div class="bars" id="catBars"></div></div>
+      <div class="card"><h3>How clients paid</h3><p class="hint">Income by payment method for the selected period.</p><div class="bars" id="methBars"></div></div>
+    </div>
+  </div>
+
+  <!-- EXPENSES -->
+  <div id="panelExpenses" style="display:none;">
+    <div class="toolbar">
+      <input type="search" class="form-input grow" id="eq" placeholder="Search description, payee or reference…">
+      <select class="form-input" id="eCat"><option value="">All categories</option></select>
+      <button class="btn-sm primary" id="addExp">+ Add expense</button>
+      <button class="btn-sm" id="expCsv">Export CSV</button>
+    </div>
+    <div class="sheet">
+      <table class="list wide">
+        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Paid to</th><th>Method</th><th class="r">Amount</th></tr></thead>
+        <tbody id="expBody"><tr><td class="loading" colspan="6">Loading…</td></tr></tbody>
+        <tfoot><tr><td colspan="5">Total shown</td><td class="r" id="expTotal">₦0.00</td></tr></tfoot>
+      </table>
+    </div>
+    <p class="muted-note">Showing expenses in the selected period. Click a row to edit or delete it.</p>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="panelReports" style="display:none;">
+    <div class="toolbar">
+      <button class="btn-sm primary" id="printRep">Print report</button>
+      <button class="btn-sm" id="incCsv">Export income CSV</button>
+      <button class="btn-sm" id="expCsv2">Export expenses CSV</button>
+    </div>
+    <div class="card">
+      <h3>Profit &amp; loss</h3>
+      <p class="hint" id="plHint"></p>
+      <table class="list"><tbody id="plBody"></tbody></table>
+    </div>
+    <div class="card">
+      <h3>Unpaid invoices by age</h3>
+      <p class="hint">Money clients still owe you today, by how long past the due date it is. Voided and draft invoices are left out.</p>
+      <table class="list"><thead><tr><th>Age</th><th class="r">Invoices</th><th class="r">Amount owed</th></tr></thead><tbody id="ageBody"></tbody></table>
+    </div>
+    <div class="card">
+      <h3>Top clients</h3>
+      <p class="hint">Who paid you the most in the selected period.</p>
+      <table class="list"><thead><tr><th>Client</th><th class="r">Payments</th><th class="r">Total paid</th></tr></thead><tbody id="topBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- Expense modal -->
+<div class="modal-bg" id="expBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="expTitle">
+    <h2 id="expTitle">Add expense</h2>
+    <p class="sub">Record money the business spent.</p>
+    <div class="msg" id="expMsg"></div>
+    <div class="row2">
+      <div class="fg"><label class="form-label" for="xDate">Date</label><input class="form-input" id="xDate" type="date"></div>
+      <div class="fg"><label class="form-label" for="xAmt">Amount (₦) *</label><input class="form-input" id="xAmt" type="number" min="0" step="0.01"></div>
+      <div class="fg full"><label class="form-label" for="xCat">Category *</label><select class="form-input" id="xCat"></select></div>
+      <div class="fg full"><label class="form-label" for="xDesc">Description *</label><input class="form-input" id="xDesc" maxlength="300" placeholder="What was it for?"></div>
+      <div class="fg"><label class="form-label" for="xPayee">Paid to</label><input class="form-input" id="xPayee" maxlength="160" placeholder="Supplier or person"></div>
+      <div class="fg"><label class="form-label" for="xMethod">Method</label>
+        <select class="form-input" id="xMethod"><option>Bank transfer</option><option>Cash</option><option>Card / Paystack</option><option>POS</option><option>Cheque</option><option>Other</option></select></div>
+      <div class="fg"><label class="form-label" for="xRef">Reference / receipt no.</label><input class="form-input" id="xRef" maxlength="120"></div>
+      <div class="fg"><label class="form-label" for="xNote">Note</label><input class="form-input" id="xNote" maxlength="500"></div>
+    </div>
+    <div class="foot">
+      <button class="btn-sm danger" id="xDel" type="button" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn-sm" id="xCancel" type="button">Cancel</button>
+      <button class="btn-sm primary" id="xSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const CATEGORIES = ['Salaries & wages', 'Cleaning supplies & chemicals', 'Equipment & repairs', 'Transport & fuel', 'Uniforms & PPE',
+    'Rent & utilities', 'Marketing & advertising', 'Insurance & licences', 'Professional fees', 'Bank charges', 'Taxes & levies', 'Other'];
+
+  let expenses = [], payments = [], docs = [], totals = {};
+  let tab = 'overview';
+  let editingId = null;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+  const r2 = (n) => Math.round((num(n) + Number.EPSILON) * 100) / 100;
+  const naira = (n) => (num(n) < 0 ? '-' : '') + '₦' + Math.abs(num(n)).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const short = (n) => { n = num(n); const a = Math.abs(n); if (a >= 1e6) return '₦' + (n / 1e6).toFixed(a >= 1e7 ? 0 : 1) + 'M'; if (a >= 1e3) return '₦' + (n / 1e3).toFixed(a >= 1e4 ? 0 : 1) + 'k'; return '₦' + Math.round(n); };
+  const pad = (n) => String(n).padStart(2, '0');
+  const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const fmtD = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function flash(text, ok, targetId) {
+    const m = $(targetId || 'msg');
+    m.textContent = text; m.className = 'msg show ' + (ok ? 'ok' : 'bad');
+    if (!targetId && ok) setTimeout(() => { if (m.textContent === text) m.className = 'msg'; }, 6000);
+  }
+  function niceError(e) {
+    const t = (e && e.message) || 'Something went wrong.';
+    if (/row-level security|42501|only admins/i.test(t)) return 'You do not have permission to do that.';
+    if (/violates check constraint/i.test(t)) return 'One of the values is not allowed (the amount must be above zero and text must not be too long).';
+    return t;
+  }
+
+  // ---------- periods ----------
+  function periodRange(preset, now) {
+    const y = now.getFullYear(), m = now.getMonth();
+    if (preset === 'month') return [ymd(new Date(y, m, 1)), ymd(new Date(y, m + 1, 0))];
+    if (preset === 'lastmonth') return [ymd(new Date(y, m - 1, 1)), ymd(new Date(y, m, 0))];
+    if (preset === 'quarter') { const q = Math.floor(m / 3) * 3; return [ymd(new Date(y, q, 1)), ymd(new Date(y, q + 3, 0))]; }
+    if (preset === 'year') return [y + '-01-01', y + '-12-31'];
+    if (preset === 'lastyear') return [(y - 1) + '-01-01', (y - 1) + '-12-31'];
+    if (preset === 'all') return ['0000-01-01', '9999-12-31'];
+    return [$('pFrom').value || '0000-01-01', $('pTo').value || '9999-12-31'];
+  }
+  const inRange = (d, r) => d >= r[0] && d <= r[1];
+  function range() { return periodRange($('period').value, new Date()); }
+  function rangeLabel() {
+    const r = range();
+    if ($('period').value === 'all') return 'All time';
+    return fmtD(r[0]) + ' to ' + fmtD(r[1]);
+  }
+
+  // ---------- numbers ----------
+  const sum = (arr, f) => r2(arr.reduce((a, x) => a + num(f(x)), 0));
+  function groupSum(arr, keyF, valF) {
+    const m = new Map();
+    arr.forEach((x) => { const k = keyF(x); m.set(k, r2((m.get(k) || 0) + num(valF(x)))); });
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }
+  function monthSeries(now) {
+    const out = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      out.push({ key: d.getFullYear() + '-' + pad(d.getMonth() + 1), label: MONTHS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2), inc: 0, exp: 0 });
+    }
+    const idx = {}; out.forEach((o, i) => { idx[o.key] = i; });
+    payments.forEach((p) => { const i = idx[String(p.paid_on).slice(0, 7)]; if (i != null) out[i].inc = r2(out[i].inc + num(p.amount)); });
+    expenses.forEach((x) => { const i = idx[String(x.expense_date).slice(0, 7)]; if (i != null) out[i].exp = r2(out[i].exp + num(x.amount)); });
+    return out;
+  }
+  function receivables(todayS) {
+    const buckets = [['Not yet due', 0, 0], ['1–30 days overdue', 0, 0], ['31–60 days overdue', 0, 0], ['61–90 days overdue', 0, 0], ['Over 90 days overdue', 0, 0]];
+    const today = new Date(todayS + 'T00:00:00');
+    docs.forEach((d) => {
+      if (d.kind !== 'invoice' || d.status === 'Void' || d.status === 'Draft') return;
+      const bal = num((totals[d.id] || {}).balance);
+      if (bal <= 0.004) return;
+      const ref = d.due_date || d.issue_date;
+      const days = Math.floor((today - new Date(ref + 'T00:00:00')) / 86400000);
+      const i = days <= 0 ? 0 : days <= 30 ? 1 : days <= 60 ? 2 : days <= 90 ? 3 : 4;
+      buckets[i][1] += 1; buckets[i][2] = r2(buckets[i][2] + bal);
+    });
+    return buckets;
+  }
+
+  // ---------- load ----------
+  async function loadAll() {
+    const [ex, pa, dc, tt] = await Promise.all([
+      supabaseClient.from('expenses').select('*').order('expense_date', { ascending: false }).limit(20000),
+      supabaseClient.from('document_payments').select('*').order('paid_on', { ascending: false }).limit(20000),
+      supabaseClient.from('documents').select('id, kind, number, client_name, status, issue_date, due_date').limit(5000),
+      supabaseClient.from('document_totals').select('*').limit(5000),
+    ]);
+    if (pa.error || dc.error || tt.error) {
+      $('expBody').innerHTML = '<tr><td colspan="6" class="loading">The billing tables are missing. Run <strong>01_billing_schema.sql</strong> in Supabase first.</td></tr>';
+      return false;
+    }
+    if (ex.error) {
+      $('expBody').innerHTML = '<tr><td colspan="6" class="loading">The expenses table has not been set up yet. Run <strong>02_finance_schema.sql</strong> in Supabase first.</td></tr>';
+      expenses = [];
+    } else expenses = ex.data || [];
+    payments = pa.data || []; docs = dc.data || [];
+    totals = {}; (tt.data || []).forEach((t) => { totals[t.document_id] = t; });
+    return !ex.error;
+  }
+
+  // ---------- rendering ----------
+  function renderAll() {
+    const r = range();
+    $('periodLabel').textContent = rangeLabel();
+    $('printSub').textContent = 'Period: ' + rangeLabel() + '  |  Prepared ' + fmtD(ymd(new Date()));
+    const pays = payments.filter((p) => inRange(String(p.paid_on), r));
+    const exps = expenses.filter((x) => inRange(String(x.expense_date), r));
+    const inc = sum(pays, (p) => p.amount), exp = sum(exps, (x) => x.amount), net = r2(inc - exp);
+    $('kInc').textContent = naira(inc);
+    $('kExp').textContent = naira(exp); $('kExpSub').textContent = exps.length + ' expense' + (exps.length === 1 ? '' : 's');
+    $('kNet').textContent = naira(net);
+    $('kNetBox').className = 'kpi' + (net < 0 ? ' bad' : '');
+    $('kMargin').textContent = inc > 0 ? (Math.round(net / inc * 1000) / 10) + '% of income' : 'No income in this period';
+    const ag = receivables(ymd(new Date()));
+    const owed = r2(ag.reduce((a, b) => a + b[2], 0)), late = r2(ag.slice(1).reduce((a, b) => a + b[2], 0));
+    $('kRecv').textContent = naira(owed);
+    $('kRecvSub').textContent = late > 0 ? naira(late) + ' is overdue' : 'Nothing overdue';
+
+    renderChart();
+    renderBars('catBars', groupSum(exps, (x) => x.category, (x) => x.amount), 'exp', 'No expenses in this period.');
+    renderBars('methBars', groupSum(pays, (p) => p.method, (p) => p.amount), '', 'No payments in this period.');
+    renderExpenses();
+    renderReports(pays, exps, inc, exp, net, ag);
+  }
+
+  function renderBars(id, rows, cls, empty) {
+    if (!rows.length) { $(id).innerHTML = '<p class="hint" style="margin:0;">' + empty + '</p>'; return; }
+    const max = Math.max.apply(null, rows.map((x) => x[1])) || 1, total = rows.reduce((a, x) => a + x[1], 0) || 1;
+    $(id).innerHTML = rows.map((x) => '<div class="brow"><span class="nm" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><div class="track"><div class="fill ' + cls + '" style="width:' + Math.max(2, x[1] / max * 100) + '%"></div></div><span class="amt">' + naira(x[1]) + ' <span style="color:var(--muted);font-size:11.5px;">' + Math.round(x[1] / total * 100) + '%</span></span></div>').join('');
+  }
+
+  function renderChart() {
+    const s = monthSeries(new Date());
+    const max = Math.max(1, Math.max.apply(null, s.map((m) => Math.max(m.inc, m.exp))));
+    const W = 900, H = 260, L = 56, B = 34, T = 14, cw = (W - L - 8) / s.length, ph = H - B - T;
+    let g = '';
+    for (let i = 0; i <= 4; i++) {
+      const y = T + ph - ph * i / 4;
+      g += '<line x1="' + L + '" x2="' + (W - 8) + '" y1="' + y + '" y2="' + y + '" stroke="#DCE8E0" stroke-width="1"/><text x="' + (L - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="#55665D">' + short(max * i / 4) + '</text>';
+    }
+    s.forEach((m, i) => {
+      const x = L + i * cw, bw = Math.min(22, cw * 0.32);
+      const hi = ph * m.inc / max, he = ph * m.exp / max;
+      g += '<rect x="' + (x + cw / 2 - bw - 1) + '" y="' + (T + ph - hi) + '" width="' + bw + '" height="' + hi + '" rx="3" fill="#1D7A52"><title>' + esc(m.label) + ' income: ' + naira(m.inc) + '</title></rect>';
+      g += '<rect x="' + (x + cw / 2 + 1) + '" y="' + (T + ph - he) + '" width="' + bw + '" height="' + he + '" rx="3" fill="#B5772A"><title>' + esc(m.label) + ' expenses: ' + naira(m.exp) + '</title></rect>';
+      g += '<text x="' + (x + cw / 2) + '" y="' + (H - 12) + '" text-anchor="middle" font-size="11" fill="#55665D">' + esc(m.label) + '</text>';
+    });
+    $('chart').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Income received and expenses for the last 12 months">' + g + '</svg>';
+  }
+
+  function visibleExpenses() {
+    const r = range(), q = $('eq').value.trim().toLowerCase(), c = $('eCat').value;
+    return expenses.filter((x) => inRange(String(x.expense_date), r)).filter((x) => {
+      if (c && x.category !== c) return false;
+      if (q && !([x.description, x.payee, x.reference, x.category].join(' ').toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }
+  function renderCatFilter() {
+    const cur = $('eCat').value;
+    const cats = Array.from(new Set(CATEGORIES.concat(expenses.map((x) => x.category))));
+    $('eCat').innerHTML = '<option value="">All categories</option>' + cats.map((c) => '<option>' + esc(c) + '</option>').join('');
+    $('eCat').value = cats.includes(cur) ? cur : '';
+  }
+  function renderExpenses() {
+    const rows = visibleExpenses();
+    $('expBody').innerHTML = rows.length ? rows.map((x) => '<tr class="clk" data-id="' + esc(x.id) + '"><td>' + fmtD(x.expense_date) + '</td><td>' + esc(x.category) + '</td><td>' + esc(x.description) + (x.reference ? '<span class="sub">Ref: ' + esc(x.reference) + '</span>' : '') + '</td><td>' + esc(x.payee || '') + '</td><td>' + esc(x.method) + '</td><td class="r">' + naira(x.amount) + '</td></tr>').join('')
+      : '<tr><td colspan="6" class="loading">' + (expenses.length ? 'No expenses match in this period.' : 'No expenses yet. Click “Add expense” to record one.') + '</td></tr>';
+    $('expTotal').textContent = naira(sum(rows, (x) => x.amount));
+  }
+
+  function renderReports(pays, exps, inc, exp, net, ag) {
+    $('plHint').textContent = 'Cash basis for ' + rangeLabel() + ': income is money actually received, expenses are money actually spent.';
+    const expRows = groupSum(exps, (x) => x.category, (x) => x.amount);
+    const incRows = groupSum(pays, (p) => p.method, (p) => p.amount);
+    $('plBody').innerHTML =
+      '<tr><td colspan="2"><strong>Income received</strong></td></tr>' +
+      (incRows.length ? incRows.map((x) => '<tr><td style="padding-left:28px;">' + esc(x[0]) + '</td><td class="r">' + naira(x[1]) + '</td></tr>').join('') : '<tr><td style="padding-left:28px;color:var(--muted);">None</td><td class="r">' + naira(0) + '</td></tr>') +
+      '<tr><td><strong>Total income</strong></td><td class="r"><strong>' + naira(inc) + '</strong></td></tr>' +
+      '<tr><td colspan="2"><strong>Expenses</strong></td></tr>' +
+      (expRows.length ? expRows.map((x) => '<tr><td style="padding-left:28px;">' + esc(x[0]) + '</td><td class="r">' + naira(x[1]) + '</td></tr>').join('') : '<tr><td style="padding-left:28px;color:var(--muted);">None</td><td class="r">' + naira(0) + '</td></tr>') +
+      '<tr><td><strong>Total expenses</strong></td><td class="r"><strong>' + naira(exp) + '</strong></td></tr>' +
+      '<tr><td style="background:#E7F5EC;"><strong>Net profit' + (net < 0 ? ' (loss)' : '') + '</strong></td><td class="r" style="background:#E7F5EC;color:' + (net < 0 ? 'var(--danger)' : 'var(--green-dk)') + ';"><strong>' + naira(net) + '</strong></td></tr>';
+    $('ageBody').innerHTML = ag.map((b) => '<tr><td>' + b[0] + '</td><td class="r">' + b[1] + '</td><td class="r">' + naira(b[2]) + '</td></tr>').join('') +
+      '<tr><td><strong>Total owed</strong></td><td class="r"><strong>' + ag.reduce((a, b) => a + b[1], 0) + '</strong></td><td class="r"><strong>' + naira(ag.reduce((a, b) => a + b[2], 0)) + '</strong></td></tr>';
+    const byDoc = {}; docs.forEach((d) => { byDoc[d.id] = d; });
+    const top = groupSum(pays, (p) => ((byDoc[p.document_id] || {}).client_name || 'Unknown'), (p) => p.amount).slice(0, 10);
+    const cnt = {}; pays.forEach((p) => { const k = (byDoc[p.document_id] || {}).client_name || 'Unknown'; cnt[k] = (cnt[k] || 0) + 1; });
+    $('topBody').innerHTML = top.length ? top.map((x) => '<tr><td>' + esc(x[0]) + '</td><td class="r">' + cnt[x[0]] + '</td><td class="r">' + naira(x[1]) + '</td></tr>').join('') : '<tr><td colspan="3" class="loading">No payments in this period.</td></tr>';
+  }
+
+  // ---------- CSV ----------
+  function csvCell(v) {
+    let s = String(v == null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function download(name, rows) {
+    const blob = new Blob(['﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function exportExpenses() {
+    const rows = [['Date', 'Category', 'Description', 'Paid to', 'Method', 'Reference', 'Amount (NGN)', 'Note']];
+    visibleExpenses().slice().sort((a, b) => String(a.expense_date).localeCompare(String(b.expense_date))).forEach((x) => rows.push([x.expense_date, x.category, x.description, x.payee || '', x.method, x.reference || '', num(x.amount).toFixed(2), x.note || '']));
+    download('emphile_expenses_' + ymd(new Date()) + '.csv', rows);
+  }
+  function exportIncome() {
+    const r = range(), byDoc = {}; docs.forEach((d) => { byDoc[d.id] = d; });
+    const rows = [['Date received', 'Invoice', 'Client', 'Method', 'Reference', 'Amount (NGN)']];
+    payments.filter((p) => inRange(String(p.paid_on), r)).slice().sort((a, b) => String(a.paid_on).localeCompare(String(b.paid_on)))
+      .forEach((p) => { const d = byDoc[p.document_id] || {}; rows.push([p.paid_on, d.number || '', d.client_name || '', p.method, p.reference || '', num(p.amount).toFixed(2)]); });
+    download('emphile_income_' + ymd(new Date()) + '.csv', rows);
+  }
+
+  // ---------- expense modal ----------
+  function openExpense(x) {
+    editingId = x ? x.id : null;
+    $('expTitle').textContent = x ? 'Edit expense' : 'Add expense';
+    $('xCat').innerHTML = Array.from(new Set(CATEGORIES.concat(x ? [x.category] : []))).map((c) => '<option>' + esc(c) + '</option>').join('');
+    $('xDate').value = x ? x.expense_date : ymd(new Date());
+    $('xAmt').value = x ? num(x.amount).toFixed(2) : '';
+    $('xCat').value = x ? x.category : CATEGORIES[0];
+    $('xDesc').value = x ? x.description : ''; $('xPayee').value = x ? (x.payee || '') : '';
+    $('xMethod').value = x ? x.method : 'Bank transfer'; $('xRef').value = x ? (x.reference || '') : ''; $('xNote').value = x ? (x.note || '') : '';
+    $('xDel').style.display = x ? '' : 'none';
+    $('expMsg').className = 'msg';
+    $('expBg').classList.add('open'); $('xAmt').focus();
+  }
+  const closeExpense = () => { $('expBg').classList.remove('open'); editingId = null; };
+  $('addExp').addEventListener('click', () => openExpense(null));
+  $('xCancel').addEventListener('click', closeExpense);
+  $('expBody').addEventListener('click', (ev) => { const tr = ev.target.closest('tr[data-id]'); if (tr) openExpense(expenses.find((x) => x.id === tr.getAttribute('data-id'))); });
+  $('xSave').addEventListener('click', async () => {
+    const amt = r2($('xAmt').value);
+    if (!(amt > 0)) return flash('Enter an amount above zero.', false, 'expMsg');
+    if (!$('xDesc').value.trim()) return flash('Describe what the expense was for.', false, 'expMsg');
+    const row = {
+      expense_date: $('xDate').value || ymd(new Date()), category: $('xCat').value, description: $('xDesc').value.trim(), amount: amt,
+      payee: $('xPayee').value.trim() || null, method: $('xMethod').value, reference: $('xRef').value.trim() || null, note: $('xNote').value.trim() || null,
+    };
+    const btn = $('xSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const res = editingId ? await supabaseClient.from('expenses').update(row).eq('id', editingId) : await supabaseClient.from('expenses').insert(row);
+    btn.disabled = false; btn.textContent = 'Save';
+    if (res.error) return flash(niceError(res.error), false, 'expMsg');
+    const was = editingId; closeExpense();
+    await loadAll(); renderCatFilter(); renderAll();
+    flash(was ? 'Expense updated.' : 'Expense added.', true);
+  });
+  $('xDel').addEventListener('click', async () => {
+    if (!editingId || !confirm('Delete this expense? This cannot be undone.')) return;
+    const { error } = await supabaseClient.from('expenses').delete().eq('id', editingId);
+    if (error) return flash(niceError(error), false, 'expMsg');
+    closeExpense(); await loadAll(); renderCatFilter(); renderAll(); flash('Expense deleted.', true);
+  });
+
+  // ---------- wiring ----------
+  function syncTab() {
+    document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.getAttribute('data-tab') === tab));
+    $('panelOverview').style.display = tab === 'overview' ? '' : 'none';
+    $('panelExpenses').style.display = tab === 'expenses' ? '' : 'none';
+    $('panelReports').style.display = tab === 'reports' ? '' : 'none';
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => { tab = b.getAttribute('data-tab'); syncTab(); }));
+  $('period').addEventListener('change', () => { $('customRange').style.display = $('period').value === 'custom' ? '' : 'none'; renderAll(); });
+  $('pFrom').addEventListener('change', renderAll); $('pTo').addEventListener('change', renderAll);
+  $('eq').addEventListener('input', renderExpenses); $('eCat').addEventListener('change', renderExpenses);
+  $('expCsv').addEventListener('click', exportExpenses); $('expCsv2').addEventListener('click', exportExpenses);
+  $('incCsv').addEventListener('click', exportIncome);
+  $('printRep').addEventListener('click', () => window.print());
+  $('expBg').addEventListener('mousedown', (ev) => { if (ev.target === $('expBg')) closeExpense(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closeExpense(); });
+
+  $('logoutBtn').addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.href = 'login.html'; });
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    const { data: profile } = await supabaseClient.from('profiles').select('full_name, is_admin, is_staff').eq('id', session.user.id).single();
+    if (!profile || !profile.is_admin) { window.location.href = (profile && profile.is_staff) ? 'staff-portal.html' : 'portal.html'; return; }
+    $('whoLine').textContent = 'Signed in as ' + session.user.email;
+    await loadAll();
+    renderCatFilter(); syncTab(); renderAll();
+  })();
+})();
+</script>
+</body>
+</html>
